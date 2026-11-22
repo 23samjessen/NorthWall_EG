@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="760" viewBox="0 0 720 760" role="img" aria-labelledby="title desc">
+  <title id="title">Pernille Jessen · photograph forthcoming</title>
+  <desc id="desc">An editorial PJ monogram placeholder. This is not a portrait.</desc>
+  <rect width="720" height="760" fill="#eae5db"/>
+  <path d="M0 595 350 225 720 595" fill="none" stroke="#d4cbbd" stroke-width="1"/>
+  <path d="M80 760V100h560v660M125 760V145h470v615" fill="none" stroke="#cbbdaf" stroke-width="1"/>
+  <path d="M484 0v760M0 515h720" stroke="#f6f0e6" stroke-width="1"/>
+  <text x="360" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="154" font-weight="400" letter-spacing="-10" fill="#a9674d">PJ</text>
+  <path d="M328 475h64" stroke="#a9674d" stroke-width="2"/>
+  <text x="360" y="681" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" letter-spacing="4" fill="#8a7869">NORTHWALLEg</text>
+</svg>

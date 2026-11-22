@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "language": "en",
+  "fetchedAt": "2026-11-22T22:01:58.025Z",
+  "items": [
+    {
+      "id": "cloudflare-blog-0",
+      "title": "How Cloudflare WAF protects against ruby2shell (CVE-2026-132825)",
+      "url": "https://blog.cloudflare.com/ruby2shell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-20T20:24:38.000Z"
+    },
+    {
+      "id": "cloudflare-blog-1",
+      "title": "How Cloudflare WAF helps protect against phpAfterShell and other critical PHP flaws",
+      "url": "https://blog.cloudflare.com/phpaftershell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-20T20:00:45.000Z"
+    },
+    {
+      "id": "microsoft-security-0",
+      "title": "Microsoft named a Leader in the 2026 Gartner® Magic Quadrant™ for SIEM",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/20/microsoft-named-a-leader-in-the-2026-gartner-magic-quadrant-for-siem/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-20T17:00:00.000Z"
+    },
+    {
+      "id": "cloudflare-blog-2",
+      "title": "nginx2root: Five new nginx vulnerabilities, and how Cloudflare protects origins from the worst of them",
+      "url": "https://blog.cloudflare.com/nginx2root/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-20T01:58:29.000Z"
+    },
+    {
+      "id": "cloudflare-blog-3",
+      "title": "Internet traffic and attacks during the 2026 U.S. midterm elections",
+      "url": "https://blog.cloudflare.com/internet-traffic-2026-us-election/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-19T14:00:00.000Z"
+    },
+    {
+      "id": "cloudflare-blog-4",
+      "title": "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
+      "url": "https://blog.cloudflare.com/open-clairic/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-18T22:00:00.000Z"
+    },
+    {
+      "id": "cloudflare-blog-5",
+      "title": "How Cloudflare WAF helps protect against Java4Shell (CVE-2026-114938)",
+      "url": "https://blog.cloudflare.com/java4shell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-18T14:52:10.000Z"
+    },
+    {
+      "id": "cloudflare-blog-6",
+      "title": "Quad9’s withdrawal from France: A canary in the coal mine",
+      "url": "https://blog.cloudflare.com/quad9-withdrawal-from-france/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-17T20:24:27.000Z"
+    },
+    {
+      "id": "microsoft-blog-0",
+      "title": "Ignite 2026: Building the frontier ecosystem",
+      "url": "https://blogs.microsoft.com/blog/2026/11/17/ignite-2026-building-the-frontier-ecosystem/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-11-17T18:36:03.000Z"
+    },
+    {
+      "id": "microsoft-security-1",
+      "title": "Security for the agentic era, powered by Microsoft Perception",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/17/security-for-the-agentic-era-powered-by-microsoft-perception/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-17T18:14:00.000Z"
+    },
+    {
+      "id": "microsoft-security-2",
+      "title": "The risks of device code authentication for AI coding agents",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/17/the-risks-of-device-code-authentication-for-ai-coding-agents/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-17T15:00:00.000Z"
+    },
+    {
+      "id": "microsoft-security-3",
+      "title": "High volume phishing campaign uses Microsoft 365 outage lures to target multiple industry sectors",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/16/high-volume-phishing-campaign-uses-microsoft-365-outage-lures-target-multiple-industry-sectors-2/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-17T00:08:41.000Z"
+    },
+    {
+      "id": "microsoft-security-4",
+      "title": "SCKit abuses ScreenConnect to deploy remote access and target technician sessions",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/13/sckit-abuses-screenconnect-deploy-remote-access-target-technician-sessions/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-13T21:31:44.000Z"
+    },
+    {
+      "id": "cloudflare-blog-7",
+      "title": "Kitesurf is now open source",
+      "url": "https://blog.cloudflare.com/kitesurf-open-source/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-13T20:20:21.000Z"
+    },
+    {
+      "id": "cloudflare-blog-8",
+      "title": "Adapting to AI penetration testing orchestrators: The Modern Security Model",
+      "url": "https://blog.cloudflare.com/adapting-to-ai-penetration-testing-orchestrators/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-13T19:26:07.000Z"
+    },
+    {
+      "id": "cloudflare-blog-9",
+      "title": "Introducing Spend Management: Spending limits and alerts for Cloudflare",
+      "url": "https://blog.cloudflare.com/spend-management/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-13T14:00:00.000Z"
+    },
+    {
+      "id": "microsoft-blog-1",
+      "title": "From AI ambition to business impact",
+      "url": "https://blogs.microsoft.com/blog/2026/11/12/from-ai-ambition-to-business-impact/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-11-12T17:00:03.000Z"
+    },
+    {
+      "id": "microsoft-security-5",
+      "title": "Trained to betray: How post-training supply chain attacks hijack coding agents",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/12/trained-to-betray-how-post-training-supply-chain-attacks-hijack-coding-agents/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-12T17:00:00.000Z"
+    },
+    {
+      "id": "microsoft-blog-2",
+      "title": "Scaling AI value without losing control: Lessons from Frontier Firms",
+      "url": "https://blogs.microsoft.com/blog/2026/11/12/scaling-ai-value-without-losing-control-lessons-from-frontier-firms/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-11-12T16:00:02.000Z"
+    },
+    {
+      "id": "microsoft-security-6",
+      "title": "The global socket: how threat actors are weaponizing GSocket for stealthy C2",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/11/global-socket-how-threat-actors-weaponizing-gsocket-stealthy-c2/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-11T19:49:57.000Z"
+    },
+    {
+      "id": "microsoft-security-7",
+      "title": "Lessons from 59 Linux Kernel Bug Reports",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-11T16:55:00.000Z"
+    },
+    {
+      "id": "cloudflare-blog-10",
+      "title": "Choosing QuePaxa, an unusual consensus algorithm",
+      "url": "https://blog.cloudflare.com/choosing-quepaxa/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-11T14:24:46.000Z"
+    },
+    {
+      "id": "microsoft-security-8",
+      "title": "Detecting sleeper agents hiding in AI model neurons",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/10/detecting-sleeper-agents-hiding-in-ai-model-neurons/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-10T23:00:00.000Z"
+    },
+    {
+      "id": "microsoft-security-9",
+      "title": "FORGE Lab uses agentic tools to identify memory safety issues in Rust",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/09/forge-lab-uses-agentic-tools-to-identify-memory-safety-issues-in-rust/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-09T20:17:31.000Z"
+    }
+  ]
+}

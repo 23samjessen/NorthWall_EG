@@ -35,6 +35,7 @@ Pushing to GitHub saves source changes. It does **not** automatically update the
 - New NorthWallEg name, editable NW vector monogram and architectural Egyptian hero.
 - Three selectable colour directions: **Limestone**, **Midnight**, **Nile**.
 - English and Arabic pages, including nine detailed service pages in both languages.
+- Featured **Microsoft 365 & Cloud** and **Cyber Defence** panels, with the remaining seven services in an expandable **More services** icon grid and existing detail/options views.
 - Searchable services, three industry views, a project brief builder, FAQ and contact details.
 - Public team cards for Pernille Jessen (**CEO; IoT Engineer**) and Sam Jessen (**Network & Cybersecurity Engineer**), with one replaceable monogram image per person.
 - Configurable additional phones, emails, locations, hours, links and content cards. Unprovided registration fields remain empty and hidden.

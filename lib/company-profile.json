@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "company": {
+    "displayName": "NorthWallEg",
+    "legalName": "",
+    "taxRegistrationNumber": "",
+    "commercialRegistrationNumber": "",
+    "vatNumber": "",
+    "registeredAddress": ""
+  },
+  "website": {
+    "origin": "https://northwalleg-design-demo.dark-hawk-6582.chatgpt.site",
+    "isReviewDemo": true,
+    "heroImage": "/assets/egypt-hero.webp"
+  },
+  "contact": {
+    "phones": [
+      {
+        "id": "primary",
+        "enabled": true,
+        "primary": true,
+        "label": { "en": "Main line", "ar": "الهاتف الرئيسي" },
+        "number": "+45 53 88 23 02"
+      },
+      {
+        "id": "additional-phone",
+        "enabled": false,
+        "primary": false,
+        "label": { "en": "", "ar": "" },
+        "number": ""
+      }
+    ],
+    "emails": [
+      {
+        "id": "general-enquiries",
+        "enabled": false,
+        "label": { "en": "General enquiries", "ar": "الاستفسارات العامة" },
+        "address": ""
+      }
+    ],
+    "socialLinks": [
+      {
+        "id": "linkedin",
+        "enabled": false,
+        "label": { "en": "LinkedIn", "ar": "LinkedIn" },
+        "url": ""
+      }
+    ],
+    "officeHours": [
+      {
+        "id": "contact-hours",
+        "enabled": false,
+        "label": { "en": "Contact hours", "ar": "مواعيد التواصل" },
+        "value": { "en": "", "ar": "" }
+      }
+    ],
+    "locations": [
+      {
+        "id": "egypt",
+        "enabled": true,
+        "name": { "en": "Egypt", "ar": "مصر" },
+        "kind": "service-area",
+        "address": "",
+        "mapUrl": ""
+      },
+      {
+        "id": "denmark",
+        "enabled": true,
+        "name": { "en": "Denmark", "ar": "الدنمارك" },
+        "kind": "service-area",
+        "address": "",
+        "mapUrl": ""
+      },
+      {
+        "id": "additional-location",
+        "enabled": false,
+        "name": { "en": "", "ar": "" },
+        "kind": "service-area",
+        "address": "",
+        "mapUrl": ""
+      }
+    ]
+  },
+  "team": [
+    {
+      "id": "pernille-jessen",
+      "enabled": true,
+      "name": "Pernille Jessen",
+      "titles": {
+        "en": ["CEO", "IoT Engineer"],
+        "ar": ["الرئيسة التنفيذية", "مهندسة إنترنت الأشياء"]
+      },
+      "bio": { "en": "", "ar": "" },
+      "image": "/assets/team/pernille-jessen.svg",
+      "imageAlt": {
+        "en": "PJ monogram placeholder for Pernille Jessen; photograph forthcoming",
+        "ar": "حروف PJ كصورة مؤقتة لبرنيل يسن؛ ستُضاف الصورة الشخصية لاحقاً"
+      },
+      "imageIsPlaceholder": true,
+      "links": []
+    },
+    {
+      "id": "sam-jessen",
+      "enabled": true,
+      "name": "Sam Jessen",
+      "titles": {
+        "en": ["Network & Cybersecurity Engineer"],
+        "ar": ["مهندس شبكات وأمن سيبراني"]
+      },
+      "bio": { "en": "", "ar": "" },
+      "image": "/assets/team/sam-jessen.svg",
+      "imageAlt": {
+        "en": "SJ monogram placeholder for Sam Jessen; photograph forthcoming",
+        "ar": "حروف SJ كصورة مؤقتة لسام يسن؛ ستُضاف الصورة الشخصية لاحقاً"
+      },
+      "imageIsPlaceholder": true,
+      "links": []
+    },
+    {
+      "id": "additional-team-member",
+      "enabled": false,
+      "name": "",
+      "titles": { "en": [], "ar": [] },
+      "bio": { "en": "", "ar": "" },
+      "image": "",
+      "imageAlt": { "en": "", "ar": "" },
+      "imageIsPlaceholder": true,
+      "links": []
+    }
+  ],
+  "additionalContent": [
+    {
+      "id": "future-update",
+      "enabled": false,
+      "title": { "en": "", "ar": "" },
+      "body": { "en": "", "ar": "" },
+      "image": "",
+      "imageAlt": { "en": "", "ar": "" },
+      "link": { "label": { "en": "", "ar": "" }, "url": "" }
+    }
+  ],
+  "additionalLinks": [
+    {
+      "id": "future-link",
+      "enabled": false,
+      "label": { "en": "", "ar": "" },
+      "url": ""
+    }
+  ]
+}

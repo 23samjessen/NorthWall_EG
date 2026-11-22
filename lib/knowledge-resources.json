@@ -1,0 +1,958 @@
+{
+  "version": 1,
+  "verifiedOn": "2026-11-22",
+  "preparedAtUtc": "2026-11-22T21:52:56.321791+00:00",
+  "resources": [
+    {
+      "id": "iso-27001",
+      "title": "ISO/IEC 27001:2022",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Requirements for an information security management system. Includes a 2024 climate-action amendment.",
+      "url": "https://www.iso.org/standard/27001",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "ISMS",
+        "governance",
+        "risk"
+      ],
+      "sourceRef": "turn155599580search0",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "iso-27002",
+      "title": "ISO/IEC 27002:2022",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Guidance for selecting and implementing information security controls. Supports an ISMS and practical control design.",
+      "url": "https://www.iso.org/standard/75652.html",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "controls",
+        "ISMS",
+        "security"
+      ],
+      "sourceRef": "turn155599580search1",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "iso-27005",
+      "title": "ISO/IEC 27005:2022",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Guidance for identifying, assessing and treating information security risks within an ISMS.",
+      "url": "https://www.iso.org/standard/80585.html",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "risk assessment",
+        "risk treatment"
+      ],
+      "sourceRef": "turn155599580search3",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "iso-22301",
+      "title": "ISO 22301:2019",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Business continuity management system requirements for preparing for, responding to and recovering from disruption. Includes a 2024 amendment.",
+      "url": "https://www.iso.org/standard/75106.html",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "continuity",
+        "recovery",
+        "BCMS"
+      ],
+      "sourceRef": "turn155599580search6",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "iso-20000",
+      "title": "ISO/IEC 20000-1:2018",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Service management system requirements covering the planning, delivery and improvement of services. Includes a 2024 amendment.",
+      "url": "https://www.iso.org/standard/70636.html",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "ITSM",
+        "service management",
+        "operations"
+      ],
+      "sourceRef": "turn155599580search4",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "iso-27701",
+      "title": "ISO/IEC 27701:2025",
+      "category": "ISO standards",
+      "publisher": "ISO",
+      "description": "Privacy information management system requirements and guidance. The second edition replaces the 2019 edition.",
+      "url": "https://www.iso.org/standard/27701",
+      "access": "Official catalogue and preview; full standard requires the appropriate licence.",
+      "tags": [
+        "privacy",
+        "PIMS",
+        "personal data"
+      ],
+      "sourceRef": "turn155599580search5",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "nist-csf-small-business",
+      "title": "NIST CSF 2.0: Small Business Quick-Start Guide",
+      "category": "Security guidance",
+      "publisher": "NIST",
+      "description": "A practical starting point for small organisations developing a cybersecurity risk-management programme.",
+      "url": "https://csrc.nist.gov/pubs/sp/1300/final",
+      "access": "Public guidance",
+      "tags": [
+        "CSF 2.0",
+        "SMB",
+        "risk"
+      ],
+      "sourceRef": "turn424630005search0",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "nist-incident-response",
+      "title": "NIST SP 800-61 Rev. 3: Incident Response",
+      "category": "Security guidance",
+      "publisher": "NIST",
+      "description": "Integrates incident preparation, detection, response and recovery into cybersecurity risk management. Published April 2025.",
+      "url": "https://csrc.nist.gov/pubs/sp/800/61/r3/final",
+      "access": "Public guidance",
+      "tags": [
+        "incident response",
+        "CSF",
+        "recovery"
+      ],
+      "sourceRef": "turn424630005search1",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "cis-ig1",
+      "title": "CIS Controls: Implementation Group 1",
+      "category": "Security guidance",
+      "publisher": "CIS",
+      "description": "Prioritised foundational safeguards for organisations with limited security resources. Start with an assessment of applicable safeguards.",
+      "url": "https://www.cisecurity.org/controls/implementation-groups/ig1",
+      "access": "Public overview; follow CIS download and licensing terms",
+      "tags": [
+        "CIS",
+        "baseline",
+        "hardening"
+      ],
+      "sourceRef": "turn424630005search3",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "cisa-kev",
+      "title": "Known Exploited Vulnerabilities Catalog",
+      "category": "Security guidance",
+      "publisher": "CISA",
+      "description": "Use evidence of exploitation as an input to vulnerability prioritisation alongside exposure, asset importance and business impact.",
+      "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+      "access": "Public catalogue; upstream access may be restricted",
+      "tags": [
+        "vulnerabilities",
+        "patching",
+        "KEV"
+      ],
+      "sourceRef": "turn506473719search9",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "cisa-ransomware",
+      "title": "CISA and MS-ISAC Ransomware Guide",
+      "category": "Security guidance",
+      "publisher": "CISA / MS-ISAC",
+      "description": "Prevention and response guidance, including coordinated isolation, recovery priorities and evidence preservation.",
+      "url": "https://www.cisa.gov/sites/default/files/publications/CISA_MS-ISAC_Ransomware%20Guide_S508C_.pdf",
+      "access": "Public PDF; consult the publisher for updated editions",
+      "tags": [
+        "ransomware",
+        "incident response",
+        "backups"
+      ],
+      "sourceRef": "turn712700447search7",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "owasp-asvs",
+      "title": "OWASP ASVS 5.0.0",
+      "category": "Security guidance",
+      "publisher": "OWASP",
+      "description": "Requirements for designing and verifying web application security. Use specific requirement IDs in development and review work.",
+      "url": "https://asvs.owasp.org/",
+      "access": "Open standard; follow the published licence",
+      "tags": [
+        "application security",
+        "verification",
+        "ASVS"
+      ],
+      "sourceRef": "turn506473719search5",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "owasp-logging",
+      "title": "OWASP Logging Cheat Sheet",
+      "category": "Security guidance",
+      "publisher": "OWASP",
+      "description": "Guidance for useful security events, consistent event fields, safe log handling and restricted log access.",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html",
+      "access": "Public guidance",
+      "tags": [
+        "audit",
+        "logging",
+        "evidence"
+      ],
+      "sourceRef": "turn424630005search4",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "owasp-authentication",
+      "title": "OWASP Authentication Cheat Sheet",
+      "category": "Security guidance",
+      "publisher": "OWASP",
+      "description": "Guidance for secure login, reauthentication, generic errors, password handling and protection against automated attacks.",
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+      "access": "Public guidance",
+      "tags": [
+        "authentication",
+        "passwords",
+        "MFA"
+      ],
+      "sourceRef": "turn712700447search2",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-service-health",
+      "title": "Check Microsoft 365 service health",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Identify tenant-level incidents before troubleshooting individual devices. Record the advisory ID and the user impact.",
+      "url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/view-service-health?view=o365-worldwide",
+      "access": "Public documentation",
+      "tags": [
+        "service health",
+        "outages",
+        "triage"
+      ],
+      "sourceRef": "turn928859762search0",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-outlook",
+      "title": "Outlook connection troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Diagnose Microsoft 365 mailbox connectivity, software updates and Outlook profile issues.",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/exchange/outlook-issues/outlook-connection-issues",
+      "access": "Public documentation",
+      "tags": [
+        "Outlook",
+        "Exchange",
+        "email"
+      ],
+      "sourceRef": "turn928859762search3",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-teams-signin",
+      "title": "Teams sign-in errors",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Use the error code, diagnostics and web-versus-desktop comparison to isolate sign-in failures.",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/microsoftteams/teams-sign-in/resolve-sign-in-errors",
+      "access": "Public documentation",
+      "tags": [
+        "Teams",
+        "sign-in",
+        "Conditional Access"
+      ],
+      "sourceRef": "turn928859762search6",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-teams-calls",
+      "title": "Teams meeting and call troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Investigate user, meeting and participant telemetry to understand call-quality and reliability problems.",
+      "url": "https://learn.microsoft.com/en-us/microsoftteams/monitor-troubleshoot-teams-meetings-calls",
+      "access": "Public documentation",
+      "tags": [
+        "Teams",
+        "audio",
+        "network",
+        "meetings"
+      ],
+      "sourceRef": "turn506473719search8",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-entra-signin",
+      "title": "Microsoft Entra sign-in errors",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Inspect failed sign-ins, authentication details, error codes and correlation IDs to establish the failure cause.",
+      "url": "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-troubleshoot-sign-in-errors",
+      "access": "Public documentation",
+      "tags": [
+        "Entra ID",
+        "sign-in logs",
+        "identity"
+      ],
+      "sourceRef": "turn928859762search7",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-mfa",
+      "title": "Manage user authentication methods",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Role-controlled management of authentication methods, MFA registration, session revocation and recovery.",
+      "url": "https://learn.microsoft.com/en-gb/entra/identity/authentication/howto-mfa-userdevicesettings",
+      "access": "Public documentation",
+      "tags": [
+        "MFA",
+        "Authenticator",
+        "identity recovery"
+      ],
+      "sourceRef": "turn357923755search8",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-intune",
+      "title": "Intune device-enrolment troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Check licensing, device eligibility, connectivity, enrolment restrictions and the exact enrolment error.",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/mem/intune/device-enrollment/troubleshoot-device-enrollment-in-intune",
+      "access": "Public documentation",
+      "tags": [
+        "Intune",
+        "MDM",
+        "enrolment"
+      ],
+      "sourceRef": "turn628426124search1",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-defender",
+      "title": "Investigate Defender for Endpoint alerts",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Review the alert story and timeline, affected entities and investigation evidence before classifying an alert.",
+      "url": "https://learn.microsoft.com/en-us/defender-endpoint/investigate-alerts",
+      "access": "Public documentation",
+      "tags": [
+        "Defender",
+        "EDR",
+        "incident"
+      ],
+      "sourceRef": "turn628426124search3",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-sharepoint",
+      "title": "SharePoint access troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Investigate permissions, affected scope, service incidents and throttling when a site or document is inaccessible.",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/sharepoint/administration/sharepoint-online-inaccessible",
+      "access": "Public documentation",
+      "tags": [
+        "SharePoint",
+        "permissions",
+        "403"
+      ],
+      "sourceRef": "turn357923755search6",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-onedrive",
+      "title": "OneDrive sync troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Support",
+      "description": "Use sync status, account selection, storage quota and the official guided troubleshooter to identify sync failures.",
+      "url": "https://support.microsoft.com/en-us/onedrive/fix-onedrive-sync-problems",
+      "access": "Public documentation",
+      "tags": [
+        "OneDrive",
+        "sync",
+        "files"
+      ],
+      "sourceRef": "turn357923755search4",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-message-trace",
+      "title": "Exchange Online message trace",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Trace whether a message was received, rejected, deferred or delivered, and inspect the processing events.",
+      "url": "https://learn.microsoft.com/en-us/exchange/monitoring/trace-an-email-message/message-trace-modern-eac",
+      "access": "Public documentation",
+      "tags": [
+        "Exchange",
+        "mail flow",
+        "message trace"
+      ],
+      "sourceRef": "turn357923755search1",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "m365-email-auth",
+      "title": "Email authentication troubleshooting",
+      "category": "Microsoft 365",
+      "publisher": "Microsoft Learn",
+      "description": "Investigate SPF, DKIM and DMARC failures using message headers, DNS records and domain alignment.",
+      "url": "https://learn.microsoft.com/en-us/defender-office-365/email-authentication-troubleshoot",
+      "access": "Public documentation",
+      "tags": [
+        "DNS",
+        "SPF",
+        "DKIM",
+        "DMARC"
+      ],
+      "sourceRef": "turn628426124search5",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-admin",
+      "title": "Microsoft 365 admin center",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Tenant administration, users, licences, service health and support. Confirm the correct customer tenant before changes.",
+      "url": "https://admin.microsoft.com",
+      "access": "Work account and appropriate tenant permissions required",
+      "tags": [
+        "admin",
+        "tenant",
+        "service health"
+      ],
+      "sourceRef": "turn928859762search0",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-entra",
+      "title": "Microsoft Entra admin center",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Identity, sign-in logs, access policies and authentication methods. Use the least-privileged role for the task.",
+      "url": "https://entra.microsoft.com",
+      "access": "Work account and appropriate tenant permissions required",
+      "tags": [
+        "Entra",
+        "IAM",
+        "MFA"
+      ],
+      "sourceRef": "turn928859762search7",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-intune",
+      "title": "Microsoft Intune admin center",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Device enrolment, compliance, app deployment, configuration and endpoint administration.",
+      "url": "https://intune.microsoft.com",
+      "access": "Work account, licensing and appropriate tenant permissions required",
+      "tags": [
+        "Intune",
+        "MDM",
+        "devices"
+      ],
+      "sourceRef": "turn712700447search3",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-defender",
+      "title": "Microsoft Defender portal",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Security alerts, incidents, investigations and response features available under the tenant’s licences.",
+      "url": "https://security.microsoft.com",
+      "access": "Work account, licensing and appropriate tenant permissions required",
+      "tags": [
+        "Defender",
+        "XDR",
+        "SOC"
+      ],
+      "sourceRef": "turn712700447search6",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-exchange",
+      "title": "Exchange admin center",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Mail flow, message trace, mailboxes and Exchange administration.",
+      "url": "https://admin.exchange.microsoft.com",
+      "access": "Work account and appropriate Exchange permissions required",
+      "tags": [
+        "Exchange",
+        "mailboxes",
+        "message trace"
+      ],
+      "sourceRef": "turn357923755search1",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "tool-teams",
+      "title": "Teams admin center",
+      "category": "Admin tools",
+      "publisher": "Microsoft",
+      "description": "Meeting diagnostics, user configuration and Teams administration.",
+      "url": "https://admin.teams.microsoft.com",
+      "access": "Work account and appropriate Teams permissions required",
+      "tags": [
+        "Teams",
+        "meetings",
+        "calls"
+      ],
+      "sourceRef": "turn928859762search5",
+      "verifiedOn": "2026-11-22"
+    }
+  ],
+  "runbooks": [
+    {
+      "id": "rb-service-health",
+      "title": "Many users cannot use Microsoft 365",
+      "product": "Microsoft 365",
+      "summary": "Establish the affected scope before changing individual devices.",
+      "estimatedMinutes": 10,
+      "steps": [
+        "Record the affected service, tenant, users, first observed time and business impact.",
+        "Open the correct tenant’s admin center, then Health and Service health. Match the reported symptoms to active incidents.",
+        "Record the advisory or incident ID, Microsoft’s latest update and any stated workaround. Distinguish vendor estimates from your own observations.",
+        "Link affected tickets to one incident, assign an owner and agree the next customer update time.",
+        "When the vendor reports recovery, test with an affected user and record the result before closing the incident."
+      ],
+      "evidence": [
+        "Tenant identifier",
+        "Incident/advisory ID",
+        "UTC timeline",
+        "Affected-user test result"
+      ],
+      "escalateWhen": "No matching incident, increasing impact or recovery tests still fail.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/microsoft-365/enterprise/view-service-health?view=o365-worldwide"
+      ],
+      "sourceRefs": [
+        "turn928859762search0"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-outlook",
+      "title": "Outlook cannot send or receive",
+      "product": "Outlook / Exchange Online",
+      "summary": "Separate mailbox service, identity and local-client problems.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Capture the exact error, Outlook version, user, time and whether one or many people are affected.",
+        "Check service health and try the same mailbox in Outlook on the web. Confirm licensing and connectivity.",
+        "If the web mailbox works, check client updates and run the available Outlook connectivity diagnostic.",
+        "If the web mailbox also fails, review the account and tenant rather than repeatedly rebuilding the client.",
+        "Use profile repair only after the findings support it; protect locally stored data. Retest sending and receiving with a traceable test message."
+      ],
+      "evidence": [
+        "Error screenshot with sensitive content redacted",
+        "Web/desktop comparison",
+        "Diagnostic result",
+        "Test message ID"
+      ],
+      "escalateWhen": "Multiple users fail, authentication is suspicious or mail remains unavailable after the scoped fix.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/troubleshoot/exchange/outlook-issues/outlook-connection-issues"
+      ],
+      "sourceRefs": [
+        "turn928859762search3"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-teams-signin",
+      "title": "Teams sign-in fails",
+      "product": "Microsoft Teams",
+      "summary": "Use the failure code and account context to choose the next check.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Record the error code, account, client version and UTC time. Confirm the intended work tenant.",
+        "Compare web and desktop sign-in and check Microsoft 365 service health.",
+        "Run the available Teams sign-in diagnostic with an authorised admin account.",
+        "Review connectivity and the matching Entra sign-in event; a Conditional Access block needs policy-owner review.",
+        "Update the client when needed. Apply a documented client repair only after identity and service issues are excluded, then retest."
+      ],
+      "evidence": [
+        "Error code",
+        "Correlation ID when present",
+        "Web/desktop comparison",
+        "Diagnostic outcome"
+      ],
+      "escalateWhen": "The failure involves access policy, unfamiliar activity or more than one service.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/troubleshoot/microsoftteams/teams-sign-in/resolve-sign-in-errors"
+      ],
+      "sourceRefs": [
+        "turn928859762search6"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-teams-quality",
+      "title": "Teams call audio or video is poor",
+      "product": "Microsoft Teams",
+      "summary": "Correlate user symptoms with meeting and participant telemetry.",
+      "estimatedMinutes": 20,
+      "steps": [
+        "Record the meeting, participant, time window, device, connection type and exact symptom.",
+        "Open the meeting in the Teams admin center and review the affected participant’s session.",
+        "Compare device, network and media indicators. One highlighted value alone does not establish the root cause.",
+        "Compare another headset or an approved stable connection; change one variable per test.",
+        "Repeat a short call, capture the result and route recurring network or endpoint patterns to the responsible team."
+      ],
+      "evidence": [
+        "Meeting/session reference",
+        "Relevant telemetry",
+        "Device and network comparison",
+        "Retest outcome"
+      ],
+      "escalateWhen": "Several users or sites show the same failure, or evidence remains inconclusive.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/microsoftteams/monitor-troubleshoot-teams-meetings-calls"
+      ],
+      "sourceRefs": [
+        "turn506473719search8"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-entra",
+      "title": "A user cannot sign in",
+      "product": "Microsoft Entra ID",
+      "summary": "Locate the failed authentication event before resetting access.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Capture the username, application, error, device and UTC timestamp. Verify the tenant.",
+        "In Entra ID, open Monitoring and health, then Sign-in logs. Filter by the user, time and failed status.",
+        "Review the failure reason, authentication details and applicable Conditional Access results.",
+        "Record the correlation ID and error code. Use the documented error lookup to identify the correct next action.",
+        "Apply an authorised, scoped fix and confirm a new successful event. Escalate suspicious sign-ins for security investigation."
+      ],
+      "evidence": [
+        "Error and correlation IDs",
+        "Relevant sign-in result",
+        "Approved action",
+        "Successful retest time"
+      ],
+      "escalateWhen": "Risk indicators appear, policy changes are needed or privileged accounts are involved.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/entra/identity/monitoring-health/howto-troubleshoot-sign-in-errors"
+      ],
+      "sourceRefs": [
+        "turn928859762search7"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-mfa",
+      "title": "Lost phone or MFA registration problem",
+      "product": "Entra MFA",
+      "summary": "Recover the verified user’s access without creating an unmanaged bypass.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Verify the requester using the organisation’s approved identity-verification procedure and record the ticket.",
+        "Review registered methods and recent sign-in activity with the appropriate authentication-administration role.",
+        "Use the approved recovery path, such as managed re-registration or Temporary Access Pass where configured.",
+        "If compromise is suspected, follow the incident procedure and revoke affected sessions as authorised.",
+        "Have the user register a supported method and test sign-in. Record which methods changed, without storing secrets or recovery codes."
+      ],
+      "evidence": [
+        "Identity-verification outcome",
+        "Authorising person",
+        "Method change metadata",
+        "Recovery test result"
+      ],
+      "escalateWhen": "Identity cannot be verified, a privileged user is affected or compromise is suspected.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-gb/entra/identity/authentication/howto-mfa-userdevicesettings"
+      ],
+      "sourceRefs": [
+        "turn357923755search8"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-intune",
+      "title": "A Windows device will not enrol",
+      "product": "Microsoft Intune",
+      "summary": "Check eligibility and the exact error before resetting the device.",
+      "estimatedMinutes": 20,
+      "steps": [
+        "Capture device ID, OS version, ownership type, user, timestamp and enrolment error code.",
+        "Check the assigned licence, supported OS, enrolment permissions, restrictions and device limits.",
+        "Verify connectivity, proxy requirements and the device’s clock and time zone.",
+        "Check whether the device is already enrolled or associated with another management configuration. Review relevant logs.",
+        "Apply the documented fix for that error and verify successful enrolment and policy check-in. Obtain approval before any reset or wipe."
+      ],
+      "evidence": [
+        "Error code",
+        "Device and enrolment identifiers",
+        "Relevant log excerpt",
+        "Check-in result"
+      ],
+      "escalateWhen": "A reset is proposed, ownership is unclear or the same error affects multiple devices.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/troubleshoot/mem/intune/device-enrollment/troubleshoot-device-enrollment-in-intune"
+      ],
+      "sourceRefs": [
+        "turn628426124search1"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-defender",
+      "title": "Investigate a Defender alert",
+      "product": "Microsoft Defender for Endpoint",
+      "summary": "Build an evidence-based incident timeline and record response decisions.",
+      "estimatedMinutes": 20,
+      "steps": [
+        "Open the alert and record its ID, severity, detection time, affected device and user.",
+        "Review the alert story, related incidents, entities and process or event timeline.",
+        "Correlate the behaviour with approved work and other evidence. Treat an alert as a signal requiring investigation.",
+        "Use response actions under the agreed incident procedure. Document the reason, actor and time for containment decisions.",
+        "Record the investigation outcome and supporting evidence, then classify and resolve the alert only when the criteria are met."
+      ],
+      "evidence": [
+        "Alert and incident IDs",
+        "UTC timeline",
+        "Entity references",
+        "Response actions and rationale"
+      ],
+      "escalateWhen": "Active compromise, critical assets, lateral movement or uncertain containment requires the incident lead.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/defender-endpoint/investigate-alerts"
+      ],
+      "sourceRefs": [
+        "turn628426124search3"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-sharepoint",
+      "title": "SharePoint says Access denied",
+      "product": "SharePoint Online",
+      "summary": "Distinguish identity, permissions and service availability.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Capture the exact site or file URL, user identity, error and time. Avoid copying document contents into the ticket.",
+        "Confirm that the browser is using the intended account; compare a private browsing session.",
+        "Ask the site owner to check the user’s effective permissions and any intended access expiry.",
+        "For wider failures, check service health. For throttling or a waiting page, follow the documented retry behaviour.",
+        "Apply the minimum approved permission change, then test the original resource and record the result."
+      ],
+      "evidence": [
+        "Resource URL",
+        "Identity and error",
+        "Permission approval",
+        "Access retest"
+      ],
+      "escalateWhen": "Access approval is missing, broad permissions are proposed or many users are affected.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/troubleshoot/sharepoint/administration/sharepoint-online-inaccessible"
+      ],
+      "sourceRefs": [
+        "turn357923755search6"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-onedrive",
+      "title": "OneDrive files are not syncing",
+      "product": "OneDrive",
+      "summary": "Identify the sync state and protect unsynchronised work.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Record the sync icon, error, account and affected files. Identify any unsynchronised local changes.",
+        "Check that the correct account is signed in and compare the file in the web interface.",
+        "Check storage space, quota, paused sync and connectivity. Use the official icon-specific troubleshooting path.",
+        "Update the client when needed. Before unlinking or resetting, confirm local work is protected and explain that a new sync may take time.",
+        "Use a small test file to verify upload and download, then confirm the affected files are consistent."
+      ],
+      "evidence": [
+        "Sync state and error",
+        "Web/local comparison",
+        "Protection of local changes",
+        "Upload/download test"
+      ],
+      "escalateWhen": "Unsynchronised work is at risk, storage limits persist or the issue affects many users.",
+      "sourceUrls": [
+        "https://support.microsoft.com/en-us/onedrive/fix-onedrive-sync-problems"
+      ],
+      "sourceRefs": [
+        "turn357923755search4"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-mailflow",
+      "title": "A message did not arrive",
+      "product": "Exchange Online",
+      "summary": "Trace the message before changing mail policies.",
+      "estimatedMinutes": 15,
+      "steps": [
+        "Collect sender, recipient, approximate send time, timezone, message ID and any non-delivery report.",
+        "In the Exchange admin center, open Mail flow and Message trace using an authorised role.",
+        "Search the narrow time window and review whether the message was received, rejected, deferred or delivered.",
+        "Inspect processing events and the relevant policy or connector. Delivered status does not prove the recipient read the message.",
+        "Make a scoped, approved correction if required and retest. Document the trace result and actual delivery outcome."
+      ],
+      "evidence": [
+        "Message ID",
+        "Trace reference",
+        "Event result",
+        "Approval and retest"
+      ],
+      "escalateWhen": "The issue involves a security policy, widespread delay or an external sender’s configuration.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/exchange/monitoring/trace-an-email-message/message-trace-modern-eac"
+      ],
+      "sourceRefs": [
+        "turn357923755search1"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    },
+    {
+      "id": "rb-email-auth",
+      "title": "SPF, DKIM or DMARC fails",
+      "product": "Email authentication / DNS",
+      "summary": "Check the sender and alignment before editing DNS.",
+      "estimatedMinutes": 20,
+      "steps": [
+        "Obtain the original message headers and identify the legitimate sending service and expected domain.",
+        "Read Authentication-Results to separate SPF, DKIM and DMARC results and inspect alignment with the visible From domain.",
+        "Check the published SPF TXT, DKIM selector records and DMARC TXT record against the provider’s configuration.",
+        "Record the existing DNS values, obtain change approval and apply only the required correction.",
+        "Allow for DNS caching, send another message and recheck headers. Investigate forwarding or gateways when they change authentication behaviour."
+      ],
+      "evidence": [
+        "Redacted headers",
+        "Before/after DNS records",
+        "Change approval",
+        "Retest authentication results"
+      ],
+      "escalateWhen": "A third-party sender, gateway or unexplained source requires the mail-security owner.",
+      "sourceUrls": [
+        "https://learn.microsoft.com/en-us/defender-office-365/email-authentication-troubleshoot"
+      ],
+      "sourceRefs": [
+        "turn628426124search5"
+      ],
+      "contentType": "Original NorthWallEg operational checklist",
+      "verifiedOn": "2026-11-22"
+    }
+  ],
+  "newsFeeds": [
+    {
+      "id": "microsoft-security",
+      "name": "Microsoft Security Blog",
+      "url": "https://www.microsoft.com/en-us/security/blog/feed/",
+      "siteUrl": "https://www.microsoft.com/en-us/security/blog/",
+      "category": "Cybersecurity",
+      "language": "en",
+      "enabled": true,
+      "verification": {
+        "result": "HTTP 200; parsed as RSS XML",
+        "itemCount": 10,
+        "latestPublicationObserved": "2026-11-20T17:00:00Z",
+        "checkedOn": "2026-11-22",
+        "rssChannelLanguage": "en-US"
+      }
+    },
+    {
+      "id": "microsoft-it",
+      "name": "The Official Microsoft Blog",
+      "url": "https://blogs.microsoft.com/feed/",
+      "siteUrl": "https://blogs.microsoft.com/",
+      "category": "IT & cloud",
+      "language": "en",
+      "enabled": true,
+      "verification": {
+        "result": "HTTP 200; parsed as RSS XML",
+        "itemCount": 10,
+        "latestPublicationObserved": "2026-11-17T18:36:03Z",
+        "checkedOn": "2026-11-22",
+        "rssChannelLanguage": "en-US"
+      }
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare Blog",
+      "url": "https://blog.cloudflare.com/rss/",
+      "siteUrl": "https://blog.cloudflare.com/",
+      "category": "Cloud & security",
+      "language": "en",
+      "enabled": true,
+      "verification": {
+        "result": "HTTP 200; parsed as RSS XML",
+        "itemCount": 20,
+        "latestPublicationObserved": "2026-11-20T20:24:38Z",
+        "checkedOn": "2026-11-22",
+        "rssChannelLanguage": "en-us"
+      }
+    },
+    {
+      "id": "cisa-advisories",
+      "name": "CISA Advisories",
+      "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+      "siteUrl": "https://www.cisa.gov/news-events/cybersecurity-advisories",
+      "category": "Cybersecurity",
+      "language": "en",
+      "enabled": false,
+      "verification": {
+        "result": "HTTP 403 from both research browser and direct HTTP request; do not claim connected",
+        "itemCount": 0,
+        "latestPublicationObserved": null,
+        "checkedOn": "2026-11-22"
+      }
+    }
+  ],
+  "newsImplementation": {
+    "cacheSeconds": 900,
+    "fetchPolicy": "Fetch only enabled, server-configured HTTPS feed URLs; do not accept arbitrary URLs from the browser.",
+    "fields": [
+      "title",
+      "url",
+      "publisher",
+      "category",
+      "publishedAt",
+      "fetchedAt"
+    ],
+    "contentPolicy": "Display text-only headlines and source links; discard scripts and feed HTML. Do not republish full articles.",
+    "freshnessPolicy": "Keep publisher publication time separate from the successful fetch time. Label cached or unavailable results honestly; never relabel an old article as newly published.",
+    "languagePolicy": "Use the configured English feeds and check the channel or entry language where provided. Exclude non-English entries.",
+    "failurePolicy": "Use the last successful cache with its original fetch timestamp, or show a news-unavailable state if no successful cache exists."
+  },
+  "notes": [
+    "The ISO entries contain original summaries and official catalogue links, not copies of licensed standards. ISO management-system standards are not network protocols.",
+    "The runbooks are original NorthWallEg operational checklists, not Microsoft documents or an assurance that the customer tenant has a particular licence or feature.",
+    "All operational changes still require the organisation’s assigned permissions and normal change or incident procedure.",
+    "Resource links and source metadata were checked on 22 November 2026. No claim of ISO certification, Microsoft partnership or guaranteed compliance is made.",
+    "The employee resource library should be served through authenticated application routes; a hidden navigation link alone is not access control."
+  ]
+}
