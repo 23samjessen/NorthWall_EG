@@ -58,7 +58,7 @@ Open **Admin settings → Workflow**. Add a column called **Review** and choose 
 
 In **Admin settings → Automations**, create a rule for a critical ticket being created: assign an owner and notify yourself. Create a clearly labelled critical test ticket and check the resulting assignment and notification. Disable the test rule when finished.
 
-Review **Admin settings → Team** and its role options. Add access only for a real colleague whom you intend to admit. Saving a member record does not send an email and does not change the private site's audience permissions. Existing fictional sample users are sufficient for checking the assignment design.
+As owner, review **Admin settings → Team**. Create an invitation only for a real colleague whom you intend to admit. They must accept it and you must separately approve them before employee access; granting an admin role is another explicit owner decision. Creating the invitation does not send email or change the private Site audience. Existing fictional sample colleagues are sufficient for checking the assignment design. See [USER_ACCESS.md](USER_ACCESS.md).
 
 These controls support columns, field types, rule conditions and actions already implemented. A new integration or an entirely new feature still requires code.
 

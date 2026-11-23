@@ -23,23 +23,121 @@ export type NewsSourceCoverage={id:string;name:string;feedUrl:string;category:st
 export type NewsTopicCoverage={count:number;status:'available'|'no_matches';message:string};
 export type NewsResult={items:NewsItem[];status:'live'|'partial'|'unavailable'|'cached';fetchedAt:string|null;checkedAt:string;cacheSeconds:number;errors:{source:string;message:string;code?:string}[];language:'en';snapshotFetchedAt?:string;sources?:NewsSourceCoverage[];topicCoverage?:Record<string,NewsTopicCoverage>;selectionPolicy?:'source-balanced'};
 
-function decode(value:string){
-  return value.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/<[^>]*>/g,' ')
-    .replace(/&#x([a-f0-9]+);/gi,(_,x)=>{const n=parseInt(x,16);return n<=0x10ffff?String.fromCodePoint(n):'';})
-    .replace(/&#(\d+);/g,(_,x)=>{const n=Number(x);return n<=0x10ffff?String.fromCodePoint(n):'';})
-    .replace(/&(amp|quot|apos|lt|gt|nbsp);/g,(_,x)=>(({amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '} as Record<string,string>)[x]||''))
-    .replace(/<[^>]*>/g,' ').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'').replace(/\s+/g,' ').trim();
+const MAX_XML_TAG_CHARS=8192;
+const MAX_XML_ATTRIBUTES=32;
+const MAX_RAW_TEXT_CHARS=16384;
+type XmlSource={text:string;lower:string};
+type XmlTag={start:number;end:number;attributes:string;selfClosing:boolean};
+type XmlElement=XmlTag&{body:string};
+function xmlSource(text:string):XmlSource{
+  // Mask comments and CDATA only in the search view, preserving source offsets.
+  // Markup quoted inside article text must not become another item or link.
+  const pieces:string[]=[];let cursor=0;
+  while(cursor<text.length){
+    const start=text.indexOf('<!',cursor);if(start<0){pieces.push(text.slice(cursor));break;}
+    pieces.push(text.slice(cursor,start));
+    const cdata=text.startsWith('<![CDATA[',start);const comment=text.startsWith('<!--',start);
+    if(cdata||comment){
+      const ending=cdata?']]>':'-->';const end=text.indexOf(ending,start+(cdata?9:4));
+      if(end<0)throw new NewsFeedError('malformed_xml_text');
+      pieces.push(' '.repeat(end+ending.length-start));cursor=end+ending.length;
+    }else{pieces.push('<!');cursor=start+2;}
+  }
+  // Full Unicode folding can change length (for example, capital dotted I).
+  return {text,lower:pieces.join('').replace(/[A-Z]/g,char=>char.toLowerCase())};
 }
-const field=(entry:string,name:string)=>entry.match(new RegExp('<'+name+'(?:\\s[^>]*)?>([\\s\\S]*?)<\\/'+name+'>','i'))?.[1]||'';
-function categories(entry:string){
-  const values=[...entry.matchAll(/<category(?:\s[^>]*)?>([\s\S]*?)<\/category>/gi)].map(match=>decode(match[1]));
-  values.push(...[...entry.matchAll(/<category\b[^>]*\bterm=["']([^"']+)["'][^>]*\/?\s*>/gi)].map(match=>decode(match[1])));
-  return values.slice(0,40);
+const space=(char:string)=>char===' '||char==='\t'||char==='\r'||char==='\n';
+const nameChar=(char:string)=>!!char&&/[A-Za-z0-9_:.-]/.test(char);
+
+// Move only forwards. Unlike a lazy whole-document XML regex, a missing closing
+// tag or repeated malformed opener cannot cause rescanning from every '<'.
+function nextTag(source:XmlSource,name:string,from=0,closing=false):XmlTag|null{
+  const marker=`<${closing?'/':''}${name}`;let cursor=from;
+  while(cursor<source.text.length){
+    const start=source.lower.indexOf(marker,cursor);if(start<0)return null;
+    const after=start+marker.length;const boundary=source.text[after];
+    if(boundary!=='>'&&boundary!=='/'&&!space(boundary)){cursor=after;continue;}
+    let quote='';
+    for(let at=after;at<source.text.length&&at-start<=MAX_XML_TAG_CHARS;at++){
+      const char=source.text[at];
+      if(char==='<')throw new NewsFeedError('malformed_xml_tag');
+      if(quote){if(char===quote)quote='';continue;}
+      if(char==='"'||char==="'"){quote=char;continue;}
+      if(char==='>'){
+        const attributes=source.text.slice(after,at);const selfClosing=attributes.trimEnd().endsWith('/');
+        return {start,end:at+1,attributes:selfClosing?attributes.trimEnd().slice(0,-1):attributes,selfClosing};
+      }
+    }
+    throw new NewsFeedError('malformed_xml_tag');
+  }
+  return null;
+}
+function elements(source:XmlSource,name:string,maximum=1):XmlElement[]{
+  const out:XmlElement[]=[];let cursor=0;
+  while(out.length<maximum){
+    const opening=nextTag(source,name,cursor);if(!opening)break;
+    if(opening.selfClosing){out.push({...opening,body:''});cursor=opening.end;continue;}
+    const closing=nextTag(source,name,opening.end,true);if(!closing)break;
+    out.push({...opening,body:source.text.slice(opening.end,closing.start)});cursor=closing.end;
+  }
+  return out;
+}
+function attributes(tag:XmlTag):Record<string,string>{
+  const text=tag.attributes;const out:Record<string,string>=Object.create(null);let cursor=0;let count=0;
+  while(cursor<text.length){
+    while(space(text[cursor]))cursor++;if(cursor>=text.length)break;
+    const start=cursor;while(nameChar(text[cursor]))cursor++;
+    if(start===cursor||++count>MAX_XML_ATTRIBUTES)throw new NewsFeedError('malformed_xml_attribute');
+    const name=text.slice(start,cursor).toLowerCase();while(space(text[cursor]))cursor++;
+    if(text[cursor++]!=='=')throw new NewsFeedError('malformed_xml_attribute');
+    while(space(text[cursor]))cursor++;const quote=text[cursor++];
+    if(quote!=='"'&&quote!=="'")throw new NewsFeedError('malformed_xml_attribute');
+    const end=text.indexOf(quote,cursor);if(end<0)throw new NewsFeedError('malformed_xml_attribute');
+    out[name]=text.slice(cursor,end);cursor=end+1;
+  }
+  return out;
+}
+function unwrapCdata(value:string){
+  const pieces:string[]=[];let cursor=0;
+  while(cursor<value.length){
+    const start=value.indexOf('<![CDATA[',cursor);if(start<0){pieces.push(value.slice(cursor));break;}
+    pieces.push(value.slice(cursor,start));const end=value.indexOf(']]>',start+9);
+    if(end<0){pieces.push(value.slice(start+9));break;}
+    pieces.push(value.slice(start+9,end));cursor=end+3;
+  }
+  return pieces.join('');
+}
+function stripMarkup(value:string){
+  const pieces:string[]=[];let cursor=0;
+  while(cursor<value.length){
+    const start=value.indexOf('<',cursor);if(start<0){pieces.push(value.slice(cursor));break;}
+    pieces.push(value.slice(cursor,start),' ');const end=value.indexOf('>',start+1);
+    // Discard an unterminated markup tail instead of repeatedly trying '<'.
+    if(end<0)break;cursor=end+1;
+  }
+  return pieces.join('');
+}
+function decode(value:string){
+  const text=stripMarkup(unwrapCdata(value.slice(0,MAX_RAW_TEXT_CHARS)))
+    .replace(/&#x([a-f0-9]{1,8});/gi,(_,x)=>{const n=parseInt(x,16);return n<=0x10ffff?String.fromCodePoint(n):'';})
+    .replace(/&#(\d{1,10});/g,(_,x)=>{const n=Number(x);return n<=0x10ffff?String.fromCodePoint(n):'';})
+    .replace(/&(amp|quot|apos|lt|gt|nbsp);/g,(_,x)=>(({amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '} as Record<string,string>)[x]||''));
+  return stripMarkup(text).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'').replace(/\s+/g,' ').trim();
+}
+const field=(source:XmlSource,name:string)=>elements(source,name)[0]?.body||'';
+function categories(source:XmlSource){
+  const values:string[]=[];
+  for(const category of elements(source,'category',40)){
+    const term=attributes(category).term;const value=decode(category.body||term||'').slice(0,200);
+    if(value)values.push(value);
+  }
+  return values;
 }
 export function classifyNewsTopics(title:string,summary='',tags:string[]=[]):NewsTopic[]{
   // Use only individual article text/tags. A publisher name or site-wide footer
   // is not evidence that a particular article covers SOAR or an actual attack.
-  const text=[title,summary.slice(0,2000),...tags].join(' ');
+  title=title.slice(0,240);summary=summary.slice(0,2000);tags=tags.slice(0,40).map(tag=>tag.slice(0,200));
+  const text=[title,summary,...tags].join(' ');
   const normal=text.replace(/[^a-z0-9]+/gi,' ').toLowerCase();
   const matched=new Set<NewsTopic>();
   if(/\bSOAR\b/.test(text)||/\bxsoar\b/i.test(text)||tags.some(tag=>/^soar$/i.test(tag.trim()))||/\bsecurity orchestration(?: and)? automation(?: and)? response\b/.test(normal))matched.add('SOAR');
@@ -56,34 +154,42 @@ export function classifyNewsTopics(title:string,summary='',tags:string[]=[]):New
   return NEWS_TOPICS.filter(topic=>matched.has(topic));
 }
 export function parseNewsDate(value:string):string|null{
-  const raw=decode(value).replace(/\bCEST\b/g,'+0200').replace(/\bCET\b/g,'+0100');
+  const raw=decode(value.slice(0,256)).replace(/\bCEST\b/g,'+0200').replace(/\bCET\b/g,'+0100');
   if(!raw)return null;const date=new Date(raw);return Number.isFinite(date.getTime())?date.toISOString():null;
 }
 function stableItemId(feedId:string,url:string){let hash=2166136261;for(const char of url){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}return `${feedId}-${(hash>>>0).toString(16)}`;}
 function approvedUrl(value:string,base:string,feed:NewsFeed):URL|null{
-  try{const url=new URL(value,base);if(url.protocol!=='https:'||url.username||url.password||!feed.hosts.includes(url.hostname))return null;url.hash='';return url;}catch{return null;}
+  try{const url=new URL(value,base);if(url.protocol!=='https:'||url.port||url.username||url.password||!feed.hosts.includes(url.hostname))return null;url.hash='';return url;}catch{return null;}
 }
 export function parseNewsFeed(xml:string,feed:NewsFeed):NewsItem[]{
+  // The HTTP reader enforces the byte ceiling; also bound direct parser callers.
+  if(xml.length>MAX_FEED_BYTES)throw new NewsFeedError('feed_too_large');
   if(/<!DOCTYPE|<!ENTITY/i.test(xml))throw new NewsFeedError('unsupported_xml_declaration');
-  if(!/<(?:rss|feed)(?:\s|>)/i.test(xml))throw new NewsFeedError('invalid_feed_format');
-  const language=decode(field(xml,'language'))||xml.match(/<(?:rss|feed|channel)\b[^>]*\bxml:lang=["']([^"']+)["']/i)?.[1]||'';
+  const source=xmlSource(xml);const root=nextTag(source,'rss')||nextTag(source,'feed');
+  if(!root)throw new NewsFeedError('invalid_feed_format');
+  const channel=nextTag(source,'channel');
+  const language=decode(field(source,'language'))||decode(attributes(root)['xml:lang']||(channel?attributes(channel)['xml:lang']:'')||'');
   if(language&&!/^en(?:[-_]|$)/i.test(language))throw new NewsFeedError('non_english_feed');
   // Talos' official English feed omits language metadata; its English provenance
   // is verified in NEWS.md. Explicit non-English metadata is always rejected.
-  const entries=xml.match(/<item(?:\s[^>]*)?>[\s\S]*?<\/item>/gi)||xml.match(/<entry(?:\s[^>]*)?>[\s\S]*?<\/entry>/gi)||[];
+  const rssEntries=elements(source,'item',MAX_FEED_ITEMS);
+  const entries=rssEntries.length?rssEntries:elements(source,'entry',MAX_FEED_ITEMS);
   const seen=new Set<string>();const items:NewsItem[]=[];
-  for(const entry of entries.slice(0,MAX_FEED_ITEMS)){
-    const itemLanguage=entry.match(/^<(?:item|entry)\b[^>]*\bxml:lang=["']([^"']+)["']/i)?.[1]||entry.match(/<title\b[^>]*\bxml:lang=["']([^"']+)["']/i)?.[1];
+  for(const entry of entries){
+    const body=xmlSource(entry.body);const titleElement=elements(body,'title')[0];
+    const itemLanguage=attributes(entry)['xml:lang']||(titleElement?attributes(titleElement)['xml:lang']:'');
     if(itemLanguage&&!/^en(?:[-_]|$)/i.test(itemLanguage))continue;
-    const title=decode(field(entry,'title')).slice(0,240);if(!title)continue;
-    const atomLinks=[...entry.matchAll(/<link\b([^>]+)\/?\s*>/gi)].map(match=>match[1]);
-    const alternate=atomLinks.find(attrs=>! /\brel=/.test(attrs)||/\brel=["']alternate["']/i.test(attrs));
-    const rawLink=decode(field(entry,'link'))||alternate?.match(/\bhref=["']([^"']+)["']/i)?.[1]||'';
-    if(!rawLink||rawLink.length>2048)continue;const link=approvedUrl(decode(rawLink),feed.url,feed);if(!link||seen.has(link.toString()))continue;
-    const summary=decode(field(entry,'description')||field(entry,'summary')).slice(0,2000);const topics=classifyNewsTopics(title,summary,categories(entry));
+    const title=decode(titleElement?.body||'').slice(0,240);if(!title)continue;
+    const links=elements(body,'link',20).map(link=>({body:link.body,attrs:attributes(link)}));
+    const alternate=links.find(link=>!link.attrs.rel||link.attrs.rel.toLowerCase()==='alternate');
+    const rawLink=links.find(link=>link.body.trim())?.body||alternate?.attrs.href||'';
+    // Never truncate a URL into a different destination while decoding text.
+    if(!rawLink||rawLink.length>8192)continue;const decodedLink=decode(rawLink);if(!decodedLink||decodedLink.length>2048)continue;
+    const link=approvedUrl(decodedLink,feed.url,feed);if(!link||seen.has(link.toString()))continue;
+    const summary=decode(field(body,'description')||field(body,'summary')).slice(0,2000);const topics=classifyNewsTopics(title,summary,categories(body));
     if(feed.topic&&!topics.includes(feed.topic))continue;
     const url=link.toString();seen.add(url);
-    items.push({id:stableItemId(feed.id,url),title,url,source:feed.name,category:feed.category,publishedAt:parseNewsDate(field(entry,'pubDate')||field(entry,'published')||field(entry,'updated')),topics});
+    items.push({id:stableItemId(feed.id,url),title,url,source:feed.name,category:feed.category,publishedAt:parseNewsDate(field(body,'pubdate')||field(body,'published')||field(body,'updated')),topics});
   }
   return items.sort((a,b)=>(b.publishedAt||'').localeCompare(a.publishedAt||''));
 }

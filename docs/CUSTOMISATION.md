@@ -8,7 +8,9 @@ The current app belongs in `23samjessen/NorthWall_EG` and has its own site, data
 
 Open the project folder in VS Code, then open its integrated terminal. The commands below run from the folder containing `package.json`.
 
-Requirements: Node.js **22.13.0 or later**, npm and enough disk space for the dependencies and build output. The project uses React, Vinext and a Cloudflare Worker with D1 storage.
+Leave `NORTHWALL_RUNTIME` unset for the default Sites/local-preview commands below. The separate Node-target commands are listed later in this section.
+
+Requirements: Node.js **22.13.0 or later**, npm and enough disk space for dependencies and build output. The default Sites target uses React, Vinext, a Cloudflare Worker, D1 and private R2 storage. A separate standard Next/Node target under `hostinger/` uses MySQL and private portrait BLOBs. The existing Site, gateway and data remain intact; creating the Node build does not migrate or deploy them.
 
 ### Install the supplied versions
 
@@ -61,31 +63,66 @@ Use **Ctrl+C** in that terminal to stop the server.
 
 ```sh
 npm run build
-npm start
+npm run preview:worker
 ```
 
 Use the URL printed by Wrangler. The built preview uses the same local `.wrangler/state` storage. It does not publish the site and does not provide the portable development sign-in simulator.
 
+### Prepare the separate Hostinger Node target
+
+Use `hostinger/.env.example` as a list of private destination settings, not as a configured account. The Node target requires a canonical HTTPS origin, verified edge HTTPS enforcement, an authentication secret, MySQL credentials and SMTP settings. Keep `PUBLIC_LAUNCH=false` until the company launch is approved. Actual hosting-plan, SSL, mailbox and migration verification remain pending.
+
+After those settings and an approved private terminal are available, the commands are:
+
+```sh
+npm run hostinger:setup -- --schema-only
+npm run hostinger:setup
+npm run hostinger:check
+npm run build:hostinger
+npm run start:hostinger
+```
+
+Setup explicitly initializes the three storage and five authentication tables as InnoDB; it does not erase records. The second command also prompts privately for a temporary owner password. Never pass a password on the command line or put one in source code. That temporary credential expires after 24 hours and must be replaced after email verification before workspace access. No owner password has been set by preparing these files.
+
+`hostinger:check` verifies schema, owner provisioning and a database packet allowance of at least **4 MiB**, needed for the accepted 2 MiB portraits. `npm run hostinger:check -- --smtp` optionally checks the configured mailbox connection without sending a message. Real sign-in delivery still needs a separate test. These instructions do not claim that SMTP or a Hostinger deployment is currently connected.
+
+`NORTHWALL_RUNTIME=hostinger` selects the Node target for generic build/start commands; the explicit commands above are clearer when maintaining both targets. `.hostinger-app/` is disposable generated build output. Do not place private uploads or runtime databases inside it. MySQL schemas in `hostinger/` are separate from the SQLite/D1 migrations under `drizzle/`.
+
+### Verification commands
+
+```sh
+npm run test:backend
+npm run test:news
+npm run test:security
+npm run test:hostinger
+npm run build:hostinger
+npm run test:hostinger-render
+```
+
+Recorded local results are **92 backend + 33 news + 17 HTTP/security = 142 core checks**, plus **32 Node authentication, 15 storage-contract, 7 Node HTTP and one actual built-Next SSR/API-origin test**. The real MySQL storage/auth suites contain seven and five scenarios; their GitHub CI results are not yet observed. They require separate dedicated empty test databases and must never point at production. Current release status is maintained in [VERIFICATION.md](VERIFICATION.md).
+
 ## 2. Where are the username and password?
 
-**This version does not have a NorthWallEg username/password database or a shared administrator password.** Hosted sign-in is supplied by the hosting platform. The backend receives the verified account identity and checks whether that identity is an active workspace member.
+**The existing Sites deployment has no NorthWallEg password database or shared administrator password.** It continues to use the platform gateway. The separate Node target now contains email/password authentication, salted scrypt hashes, email-code verification, secure sessions and a first-use password-change gate. It has not been deployed to Hostinger, and no real owner password or SMTP delivery has been set up by these source changes. In both targets, a valid sign-in still requires owner-approved workspace membership.
 
 The sample credentials in the earlier static `NorthWall_Approval_Demo` package are obsolete for this version. They do not log in to the new workspace. Sample names such as Nora, Omar and Maya are fictional assignment/demo records; they are not working accounts.
 
 | Task | Correct place |
 | --- | --- |
-| Change the password used to sign in | The identity provider's account settings; no password is stored in this repository |
-| Change the initial administrator allowlist | Server runtime variable `ADMIN_EMAILS` |
-| Add a real colleague after initial setup | **Admin settings → Team** |
-| Change a member's role, display name, title or active status | **Admin settings → Team** |
-| Change authentication or membership implementation | `lib/workspace-server.ts` and `app/chatgpt-auth.ts` |
+| Change the password used on the existing Site | The platform identity provider's account settings |
+| Provision/recover the separate Node owner | Private `hostinger:setup` terminal prompt; `--recover-owner` is the explicit recovery mode |
+| Maintain Node password/session policy | `hostinger/auth/`; credentials belong in the destination's protected database, never Git |
+| Change the initial Sites administrator allowlist | Server runtime variable `ADMIN_EMAILS`; the Node target derives its bootstrap owner from private `OWNER_EMAIL` configuration |
+| Invite and approve a real colleague after setup | Owner: **Admin settings → Team** |
+| Change account role/access | Owner: **Admin settings → Team**; safe profile details remain separate |
+| Change authentication or membership implementation | Shared rules in `lib/workspace-server.ts`; Sites adapter in `app/chatgpt-auth.ts`; Node boundary/session code in `hostinger/` |
 | Inspect member and role types | `lib/workspace-types.ts` |
 
 ### Initial administrator
 
-`bootstrapAllowed()` in `lib/workspace-server.ts` reads a comma-separated `ADMIN_EMAILS` runtime value. The review build defaults to Sam's owner account if that value is absent. Set the explicit runtime variable when changing ownership or preparing a separate installation.
+`bootstrapAllowed()` in `lib/workspace-server.ts` reads a comma-separated `ADMIN_EMAILS` runtime value. Missing or empty configuration denies initial setup; there is no built-in fallback account. Set the explicit runtime value for the intended owner when preparing a separate installation.
 
-The first authorised administrator opens the workspace and initialises its sample dataset. Initialisation is allowed once; it does not overwrite an existing workspace. After initialisation, the database's member records control access. Changing `ADMIN_EMAILS` later does **not** automatically promote a new user inside an existing workspace.
+The first authorized owner opens the workspace and chooses **Start empty workspace** (`workspace.initialize`) for real use or **Load sample workspace** (`demo.initialize`) for review. Empty setup has no sample people, tickets or conversations and records `sampleData: false`. Both actions are allowed once and cannot overwrite an existing workspace. After setup, persisted owner identity and approved memberships control access. Changing `ADMIN_EMAILS` later does **not** promote a new user inside an existing workspace.
 
 Keep runtime configuration out of browser bundles. A production runtime setting is separate from a local `.dev.vars` file, and hosted configuration changes need to be applied through the site's deployment workflow.
 
@@ -103,16 +140,16 @@ If the local database was already initialised under a different identity, adding
 
 ### Add a real colleague
 
-1. Sign in as an administrator.
-2. Open **Admin settings → Team**.
-3. Enter the colleague's real sign-in email, name, job title and appropriate role.
-4. Save the member record.
-5. Ensure the colleague also has permission to open the hosted review site. Site audience permissions and employee membership are two separate checks.
-6. The colleague signs in with that same account. On the first successful workspace write, the server associates the approved member record with the platform's stable user ID. Until then, the member list shows **Pending account link**.
+1. Sign in as the owner and open **Admin settings → Team → Create invitation**.
+2. Enter the colleague's real sign-in email, name and job title. The record starts inactive and does not grant an administrator role.
+3. Copy and share the invitation instructions through your chosen channel; creating an invitation does not send an invitation email/SMS. Separately grant private Site audience permission when appropriate. The Node login's verification-code emails are a separate SMTP-dependent function.
+4. The person signs in with that account and accepts the current invitation. Their verified identity is bound, but employee data remains inaccessible.
+5. As owner, explicitly approve their accepted invitation from Team before its seven-day expiry. The person can then enter as an employee.
+6. Grant a manager/admin role separately if needed. Only the owner controls invitation, approval, revocation and account roles.
 
-Adding a member **does not send an invitation email**. It creates the access record. The review site remains owner-private until its owner explicitly changes its audience. Do not interpret an entry in the member list as proof that a colleague can open the site.
+Reissue invalidates earlier acceptance and requires the process again **for the same original verified identity**. The private identity anchor survives revocation and repeated reissues. Recycled email ownership cannot claim another employee's notes, DMs or portrait. Legacy bound IDs are preserved; an older lifecycle record that has already lost its identity binding cannot be safely reissued.
 
-The backend prevents an administrator from suspending or demoting their own account and protects the last active administrator. Another active administrator must change an administrator's own access.
+For replacement staff, revoke the old record and create a separate invitation. Reusing the email is allowed only when all older matching records are revoked, inactive and unbound. The new record starts without the old person's private history. Public Node enrollment cannot adopt an imported anchor; migration/recovery requires a reviewed identity mapping. Samples cannot sign in, and the owner cannot be disabled or demoted through team settings. Full instructions: [USER_ACCESS.md](USER_ACCESS.md).
 
 ### Public people and private employee profiles
 
@@ -124,7 +161,7 @@ Choose **Choose photograph** or **Choose replacement**, then **Save photograph**
 
 Administrators see title, avatar and completion status in **Admin settings → Team** and can open **Manage profile**. An employee can edit only their own profile; administrators can manage other employee profiles. A job title is descriptive text and does not change the access role.
 
-Employee photo bytes live in private R2 storage through `BUCKET`; D1 retains metadata. The protected `/api/profile-photo` route requires workspace membership. These are team-visible employee profiles, separate from public team photographs under `public/assets/team/`. See [WORKSPACE.md](WORKSPACE.md) for the user steps.
+Employee photo bytes live in private R2 storage on Sites; D1 retains their metadata. The Node target stores the private objects in MySQL `profile_photos` BLOBs. The protected `/api/profile-photo` route requires approved membership in either target. These internal profiles are separate from public photographs under `public/assets/team/`. See [WORKSPACE.md](WORKSPACE.md) for user steps.
 
 ## 3. Roles and visibility
 
@@ -140,10 +177,13 @@ This demo is one shared internal team workspace. It does not implement separate 
 | Read another person's private note | No | No | No through the workspace API |
 | Send an alert to selected members | No | Yes | Yes |
 | Create team channels | No | Yes | Yes |
-| Manage members, columns, fields, rules and workspace settings | No | No | Yes |
+| Manage safe profiles, columns, fields, rules and workspace settings | No | No | Yes |
+| Invite, approve, revoke, reissue or assign account roles | No | No | Owner only |
 | Read or export the audit trail | No | No | Yes |
 
 Team notes are readable by the team. Private notes are returned only to their owner. Direct-message records are returned only to their sender and recipient. Database operators remain a separate trust boundary because they can access the underlying storage.
+
+Only the owner receives pending, revoked and legacy accounts in the Team roster. Non-owner directory responses contain approved colleagues and sample assignment personas; other people's lifecycle metadata and identity anchors are omitted. Administrator audit access remains separate from roster visibility.
 
 The server enforces these checks. Hiding a navigation button is not the access-control mechanism. Review the checks in `applyAction()`, `visibleState()`, `memberFor()` and `readAudit()` before changing permissions.
 
@@ -181,6 +221,10 @@ The server enforces these checks. Hiding a navigation button is not the access-c
 | Capability and social icons | `lib/company-profile.json`, `components/public-icons.tsx` | Public options, platform slots and approved account URLs |
 | Database table definitions | `db/schema.ts` | Drizzle schema |
 | Database changes | `drizzle/` | Ordered SQL migrations |
+| Node runtime and trusted request identity | `hostinger/server.mjs`, `hostinger/http.mjs`, `hostinger/runtime-env.ts` | Session boundary, canonical origin and HTTP protections |
+| Node password, email-code and session policy | `hostinger/auth/`, `hostinger/mail.mjs` | Authentication implementation; real secrets stay in private runtime configuration |
+| MySQL persistence and private portrait objects | `hostinger/storage.mjs`, `hostinger/schema.sql` | Fixed prepared statements, InnoDB CAS/audit transactions and BLOB storage |
+| Destination setup and readiness checks | `hostinger/setup.mjs`, `hostinger/check.mjs` | Explicit schema/owner setup and preflight; never request-time table creation |
 | Local/start/build commands | `package.json` and `scripts/` | Runtime entry points |
 | Site identity and storage bindings | `.openai/hosting.json` | Preserve the existing `project_id` when updating this demo |
 
@@ -291,7 +335,7 @@ The public news endpoint is **`GET /api/news`**. The `NEWS_FEEDS` array in `lib/
 
 The server fetches these publishers' English RSS feeds and checks available feed/entry language metadata. No third-party news API key is required. Each source has an explicit URL and allowed host list. Adding a feed means editing this array, checking its language and licence/usage terms, and verifying both the feed and article hosts. The `/insights` hub and public/workspace news dialogs use the shared text, publisher and topic filters in `components/news-explorer.tsx`. See [NEWS.md](NEWS.md) for the exact source and cache contract.
 
-The current implementation fetches on request and caches successful results in a Worker instance for **10 minutes**. If every source is unavailable, that attempt is cached for **one minute**; a new upstream attempt becomes eligible on the next request after that window. Both website and workspace request news every **two minutes** while open. HTTP responses permit **120 seconds** of browser caching for live/partial results and **60 seconds** for cached/unavailable results. These caches are not a scheduled collector or durable news archive.
+The current implementation fetches on request and caches successful results in the server instance for **10 minutes**—a Worker isolate on Sites or the Node process in the prepared target. If every source is unavailable, that attempt is cached for **one minute**; the next request after that window can try upstream again. Both interfaces request news every **two minutes** while open. HTTP caching permits **120 seconds** for live/partial and **60 seconds** for cached/unavailable results. These caches are not a scheduled collector or durable archive.
 
 `publishedAt` is the publisher's article date. `checkedAt` records the retrieval attempt, while `fetchedAt` records a successful retrieval. If every feed fails, the API can return a recent successful runtime result or the verified saved snapshot with `status: cached`, preserving its original `fetchedAt` and identifying it as cached. When there are no usable saved items, it returns `status: unavailable` and `fetchedAt: null`. Other results are `live` or `partial`. Missing article dates remain missing. A source outage must not be disguised by invented headlines, a fabricated publication date or a new successful-retrieval timestamp.
 
@@ -340,9 +384,9 @@ npm run db:generate
 
 Review the generated SQL. Rebuild when bindings change, then apply each new pending migration locally with the command in section 1, replacing the filename. Do not modify an already-applied migration to represent a new schema change. Hosted migration application belongs to the deployment workflow, not the `--local` command.
 
-The demo currently keeps workspace records in one versioned JSON payload, with audit events in a separate table. It is intentionally bounded: up to 100 members, 12 columns, 30 custom fields, 30 rules, 1,000 tickets, 5,000 comments, 5,000 messages, 500 notes, 1,000 calendar events and 30 channels, plus a 1.5 MB workspace-payload limit. The payload limit can be reached before an individual count limit. Archived tickets still count. The notification list retains its most recent 2,000 records. Audit export is bounded to 10,000 events.
+The implementation keeps workspace records in one versioned JSON payload, with audit events in a separate table. It is intentionally bounded: up to 100 members, 12 columns, 30 custom fields, 30 rules, 1,000 tickets, 5,000 comments, 5,000 messages, 500 notes, 1,000 calendar events and 30 channels, plus a 1.5 MB workspace-payload limit. The payload limit can be reached first. Archived tickets and retained revoked member records still count. Notifications retain the newest 2,000 records. Audit export is bounded to **10,000 events and 8 MiB of stored audit-column data**, checked within the consistent snapshot before event rows are retrieved.
 
-Employee photo bytes are outside that JSON payload in the configured R2 bucket. Back up both the database and associated uploaded objects before a storage migration. An evidence export or source ZIP is not a complete backup.
+Employee photo bytes are outside that JSON payload: in R2 for Sites and the private MySQL portrait table for Node. Sites backups need both D1 and associated R2 objects. Node backups need workspace, audit, portrait and authentication tables. Schema creation does not import the old data or verify identity mappings; migration and independent restore testing remain separate steps. An evidence export or source ZIP is not a full backup.
 
 These are implementation limits for the review system, not a recommendation for a larger production service desk. Growing beyond them requires storage, pagination, retention and workload changes, not simply raising every constant.
 
@@ -350,7 +394,7 @@ These are implementation limits for the review system, not a recommendation for 
 
 The review site uses **no-index** metadata so that the demo does not compete with the eventual public company site. `lib/seo.ts` coordinates public metadata and response headers from `website.isReviewDemo`; the employee workspace has its own no-index metadata in `app/workspace/page.tsx`. `app/robots.txt/route.ts` currently disallows all crawling, and `app/sitemap.xml/route.ts` lists only public page routes, including `/insights` and its original guides.
 
-Keep the site private until company registration and the owner's launch instruction. Before launch, set `website.origin` in `lib/company-profile.json` to the real canonical origin, verify company/contact details, and review the public-page index metadata and robots route together. `website.isReviewDemo` is not a substitute for hosting audience controls or DNS configuration. Keep private routes excluded. See [HOSTINGER_AND_DOMAIN.md](HOSTINGER_AND_DOMAIN.md) for the supported domain connection sequence.
+Keep the site private until company registration and the owner's launch instruction. Before launch, set `website.origin` in `lib/company-profile.json` to the real canonical origin, verify company/contact details, and review the public-page index metadata and robots route together. `website.isReviewDemo` is not a substitute for hosting audience controls or DNS configuration. Keep private routes excluded. See [HOSTINGER_AND_DOMAIN.md](HOSTINGER_AND_DOMAIN.md) for the full-app migration, domain and HTTPS release requirements.
 
 Use clear service headings and useful content for Microsoft 365, cybersecurity, managed IT support, networks, cloud, employee portals and software services in Egypt. Adding many repeated keywords cannot guarantee a top Google position. Do not add invented customer counts, office addresses, qualifications, certifications or 24/7 response promises.
 
@@ -359,15 +403,17 @@ Use clear service headings and useful content for Microsoft 365, cybersecurity, 
 | Symptom | Check |
 | --- | --- |
 | Workspace asks for sign-in | Complete the site's sign-in flow; public sample credentials from the old ZIP do not apply |
-| Signed in but membership is refused | Check the account email, active member record and hosted site audience |
+| Signed in but membership is refused | Check exact identity continuity, invitation acceptance, owner approval, expiry/revocation and the private Site audience |
 | First setup is refused | Check `ADMIN_EMAILS` in the runtime that is actually running the code |
 | Local database tables are missing | Build, then apply the initial local migration once |
+| Node database preflight fails | Verify private configuration, explicit setup, all eight InnoDB tables and the minimum 4 MiB packet allowance; do not use D1 SQL against MySQL |
+| A reissued invitation is unavailable to an email replacement | Use the original verified account, or leave its record revoked and create a separate employee record with no inherited history |
 | A change reports a revision conflict | Reload the workspace and retry after reviewing the latest saved version |
 | News is partially available | Review `/api/news` source status; one publisher may be unavailable |
 | A column cannot be deleted | Move its tickets and remove automation references |
 | A field type cannot change | Create a new field when existing tickets already use the old type |
 | A design edit does not appear | Edit source, rebuild and deploy the new version; do not edit generated `dist/` files |
-| A member receives no email | Membership and alerts are currently in-app; outbound email is not configured |
+| A member receives no invitation or work-alert email | Share invitation instructions manually; ticket/chat alerts are in-app. Node sign-in code delivery requires separately configured/tested SMTP |
 | A public team card is missing | Check its enabled flag, nonempty name/title and valid image in `lib/company-profile.json` |
 | A photo upload is refused | Use JPEG, PNG or WebP within the 2 MiB limit; reduce oversized dimensions and save pending profile text first |
 | A profile save reports a conflict | Use **Reload saved details**, review the saved version and re-enter the intended change; reloading discards unsaved text |

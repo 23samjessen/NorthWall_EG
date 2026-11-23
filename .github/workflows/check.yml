@@ -5,6 +5,22 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: northwall_test_ci
+          MYSQL_USER: northwall_ci
+          MYSQL_PASSWORD: ci-fixture-only
+          MYSQL_ROOT_PASSWORD: ci-root-fixture-only
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 127.0.0.1:3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -12,7 +28,26 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Create isolated authentication test database
+        run: node hostinger/tests/create-ci-databases.mjs
+        env:
+          NW_CI_DB_PASSWORD: ci-root-fixture-only
       - run: npx tsc --noEmit
       - run: npm run test:backend
       - run: npm run test:news
+      - run: npm run test:security
+      - run: npm run test:hostinger
+        env:
+          NW_TEST_DB_NAME: northwall_test_ci
+          NW_TEST_DB_USER: northwall_ci
+          NW_TEST_DB_PASSWORD: ci-fixture-only
+          NW_AUTH_TEST_DB_NAME: northwall_test_auth_ci
+          NW_AUTH_TEST_DB_USER: northwall_ci
+          NW_AUTH_TEST_DB_PASSWORD: ci-fixture-only
+      - run: npm run audit:dependencies
       - run: npm run build
+      - run: npm run build:hostinger
+        env:
+          APP_ORIGIN: https://northwallegy.com
+          PUBLIC_LAUNCH: 'false'
+      - run: npm run test:hostinger-render

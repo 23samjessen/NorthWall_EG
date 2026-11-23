@@ -2435,3 +2435,152 @@
 .nw-workspace td .nw-text-link { display:block; margin-top:6px; }
 @media (max-width:1020px) { .nw-workspace .nw-profile-grid { grid-template-columns:1fr; } .nw-workspace .nw-profile-photo-body { padding:24px; } }
 @media (max-width:720px) { .nw-workspace .nw-directory-grid { grid-template-columns:1fr; } .nw-workspace .nw-profile-completion,.nw-workspace .nw-profile-nudge { flex-wrap:wrap; padding:17px; } .nw-workspace .nw-profile-nudge .nw-button { width:100%; } .nw-workspace .nw-profile-area .nw-panel-head { flex-wrap:wrap; gap:14px; } .nw-workspace .nw-directory-search { max-width:none; width:100%; } }
+
+/* Owner invitation and employee acceptance flow. */
+.nw-workspace .nw-sr-only {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.nw-workspace .nw-access-box { width:440px; }
+.nw-workspace .nw-access-symbol {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:56px;
+  height:56px;
+  background:var(--nw-accent-light);
+  color:var(--nw-accent);
+  border-radius:16px;
+  margin-bottom:22px;
+}
+.nw-workspace .nw-access-eyebrow {
+  color:var(--nw-muted);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1.1px;
+  text-transform:uppercase;
+}
+.nw-workspace .nw-access-box h2 { margin-top:12px; }
+.nw-workspace .nw-access-box > p { font-size:16px; }
+.nw-workspace .nw-access-email {
+  display:grid;
+  gap:4px;
+  padding:14px 16px;
+  margin:0 0 20px;
+  border:1px solid var(--nw-line);
+  border-radius:10px;
+  background:#fff;
+  overflow-wrap:anywhere;
+}
+.nw-workspace .nw-access-email span { font-size:13px; color:var(--nw-muted); }
+.nw-workspace .nw-access-email strong { font-size:15px; font-weight:600; }
+.nw-workspace .nw-access-steps {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  list-style:none;
+  padding:0;
+  margin:24px 0;
+}
+.nw-workspace .nw-access-steps li { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--nw-muted); }
+.nw-workspace .nw-access-steps li > span {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:26px;
+  height:26px;
+  border:1px solid var(--nw-line);
+  border-radius:50%;
+  background:#fff;
+  flex-shrink:0;
+  font-size:12px;
+}
+.nw-workspace .nw-access-steps li.complete { color:var(--nw-green); }
+.nw-workspace .nw-access-steps li.complete > span { color:#fff; background:var(--nw-green); border-color:var(--nw-green); }
+.nw-workspace .nw-access-steps li.current { color:var(--nw-ink); font-weight:600; }
+.nw-workspace .nw-access-steps li.current > span { border-color:var(--nw-accent); color:var(--nw-accent); }
+.nw-workspace .nw-access-box .nw-access-time { font-size:13px; margin:0 0 12px; line-height:1.6; }
+.nw-workspace .nw-access-time time { display:block; color:var(--nw-ink); font-size:14px; }
+.nw-workspace .nw-access-actions { display:grid; gap:10px; margin-top:22px; }
+.nw-workspace .nw-access-actions > .nw-text-link { justify-content:center; text-align:center; padding:8px; font-size:14px; }
+.nw-workspace .nw-access-note { font-size:13px; color:var(--nw-muted); line-height:1.7; margin-top:18px; }
+.nw-workspace .nw-team-access { display:grid; gap:22px; }
+.nw-workspace .nw-team-access > .nw-panel { margin:0; }
+.nw-workspace .nw-access-policy { background:#eaf0ed; border:1px solid #d5e2db; border-radius:12px; padding:23px; }
+.nw-workspace .nw-access-policy-heading { display:flex; align-items:flex-start; gap:13px; }
+.nw-workspace .nw-access-policy-heading > svg { margin-top:3px; color:var(--nw-green); }
+.nw-workspace .nw-access-policy h2 { font-size:19px; font-weight:600; margin-bottom:5px; }
+.nw-workspace .nw-access-policy p { font-size:14px; color:var(--nw-muted); line-height:1.7; }
+.nw-workspace .nw-owner-access-flow { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; padding:0; margin:23px 0 0; list-style:none; }
+.nw-workspace .nw-owner-access-flow li { display:flex; align-items:flex-start; gap:11px; }
+.nw-workspace .nw-owner-access-flow li > span { width:27px; height:27px; display:grid; place-items:center; background:#fff; color:var(--nw-green); border-radius:8px; font-size:14px; flex-shrink:0; }
+.nw-workspace .nw-owner-access-flow strong { display:block; font-weight:600; font-size:14px; }
+.nw-workspace .nw-owner-access-flow small { display:block; color:var(--nw-muted); font-size:13px; margin-top:3px; }
+.nw-workspace .nw-approval-panel { border-color:#d6bba5; }
+.nw-workspace .nw-approval-panel .nw-panel-head { background:#fcf7f3; }
+.nw-workspace .nw-approval-panel .nw-panel-head h2 { display:flex; align-items:center; gap:10px; }
+.nw-workspace .nw-approval-panel .nw-panel-head > svg { color:var(--nw-accent); }
+.nw-workspace .nw-approval-list { display:grid; gap:0; }
+.nw-workspace .nw-approval-card { display:grid; grid-template-columns:minmax(180px,1fr) minmax(220px,1.15fr) auto; align-items:center; gap:22px; padding:23px; border-bottom:1px solid var(--nw-line); }
+.nw-workspace .nw-approval-card:last-child { border-bottom:0; }
+.nw-workspace .nw-approval-card .nw-person { align-items:center; }
+.nw-workspace .nw-approval-card h3 { font-size:16px; font-weight:600; margin:0 0 4px; }
+.nw-workspace .nw-approval-card p { font-size:14px; color:var(--nw-muted); overflow-wrap:anywhere; }
+.nw-workspace .nw-approval-actions { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.nw-workspace .nw-invitation-dates { display:grid; gap:7px; margin:0; font-size:14px; }
+.nw-workspace .nw-invitation-dates > div { display:grid; grid-template-columns:65px minmax(0,1fr); gap:8px; }
+.nw-workspace .nw-invitation-dates dt { color:var(--nw-muted); }
+.nw-workspace .nw-invitation-dates dd { margin:0; color:var(--nw-ink); }
+.nw-workspace .nw-member-lifecycle { margin-top:9px; }
+.nw-workspace .nw-member-lifecycle .nw-invitation-dates { font-size:14px; gap:4px; }
+.nw-workspace .nw-member-lifecycle .nw-invitation-dates > div { display:block; }
+.nw-workspace .nw-member-lifecycle dt { display:inline; margin-right:4px; }
+.nw-workspace .nw-member-lifecycle dd { display:inline; }
+.nw-workspace .nw-table-wrap .nw-members-table { min-width:1050px; }
+.nw-workspace .nw-members-table td { vertical-align:top; }
+.nw-workspace .nw-members-table .nw-person { align-items:flex-start; }
+.nw-workspace .nw-members-table .nw-person b { display:flex; align-items:center; gap:6px; font-weight:600; font-size:14px; }
+.nw-workspace .nw-members-table .nw-member-email { overflow-wrap:anywhere; max-width:230px; }
+.nw-workspace .nw-members-table td > .nw-text-link { display:block; margin-top:7px; }
+.nw-workspace .nw-member-actions { display:flex; flex-direction:column; align-items:flex-start; gap:10px; min-width:135px; }
+.nw-workspace .nw-owner-label { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+.nw-workspace .nw-access-badge.pending { color:#92542e; background:#fbecde; }
+.nw-workspace .nw-access-badge.approved { color:#226e5d; background:#e8f4ed; }
+.nw-workspace .nw-access-revoke { color:#a64f38; font-size:13px; }
+.nw-workspace .nw-invitation-delivery { display:flex; align-items:flex-start; gap:12px; padding:21px 24px; background:#fafbf9; border-top:1px solid var(--nw-line); }
+.nw-workspace .nw-invitation-delivery > svg { color:var(--nw-muted); margin-top:3px; }
+.nw-workspace .nw-invitation-delivery strong { font-size:14px; font-weight:600; }
+.nw-workspace .nw-invitation-delivery p { font-size:14px; color:var(--nw-muted); line-height:1.7; margin-top:5px; }
+.nw-workspace .nw-invitation-person { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.nw-workspace .nw-invitation-person > div { display:grid; gap:3px; min-width:0; }
+.nw-workspace .nw-invitation-person strong { font-size:17px; font-weight:600; }
+.nw-workspace .nw-invitation-person span:not(.nw-avatar) { font-size:14px; color:var(--nw-muted); overflow-wrap:anywhere; }
+.nw-workspace .nw-invitation-role { display:flex; gap:12px; padding:16px; background:#edf4ef; border-radius:9px; margin-top:18px; }
+.nw-workspace .nw-invitation-role > svg { margin-top:3px; color:var(--nw-green); }
+.nw-workspace .nw-invitation-role strong { display:block; font-size:15px; font-weight:600; }
+.nw-workspace .nw-invitation-role span { display:block; color:var(--nw-muted); font-size:14px; margin-top:4px; }
+.nw-workspace .nw-invitation-message { min-height:230px; font-size:14px; line-height:1.7; }
+.nw-workspace .nw-admin-grant-warning { display:flex; gap:13px; padding:18px; background:#faf0e8; border:1px solid #e8d3be; border-radius:10px; }
+.nw-workspace .nw-admin-grant-warning > svg { color:var(--nw-accent); }
+.nw-workspace .nw-admin-grant-warning strong { font-size:16px; }
+.nw-workspace .nw-admin-grant-warning p,.nw-workspace .nw-modal-explanation { font-size:14px; line-height:1.8; margin-top:10px; color:var(--nw-muted); }
+@media(max-width:1100px) {
+  .nw-workspace .nw-approval-card { grid-template-columns:minmax(180px,1fr) minmax(210px,1fr); }
+  .nw-workspace .nw-approval-actions { grid-column:1/-1; flex-direction:row; align-items:center; justify-content:flex-end; }
+}
+@media(max-width:760px) {
+  .nw-workspace .nw-owner-access-flow { grid-template-columns:1fr; }
+  .nw-workspace .nw-access-policy { padding:19px; }
+  .nw-workspace .nw-approval-card { grid-template-columns:1fr; gap:17px; padding:20px; }
+  .nw-workspace .nw-approval-actions { grid-column:auto; flex-wrap:wrap; justify-content:flex-start; }
+  .nw-workspace .nw-invitation-delivery { padding:20px; }
+  .nw-workspace .nw-team-access .nw-panel-head { flex-wrap:wrap; gap:14px; }
+  .nw-workspace .nw-team-access .nw-panel-head > .nw-button { width:100%; justify-content:center; }
+}

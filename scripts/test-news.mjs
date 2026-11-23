@@ -54,6 +54,50 @@ try {
     assert.throws(()=>parseNewsFeed('<!DOCTYPE rss [<!ENTITY x SYSTEM "file:///secret">]>'+rss([row()]),fixtureFeed),/unsupported_xml_declaration/);
     assert.throws(()=>parseNewsFeed('<html>Publisher maintenance</html>',fixtureFeed),/invalid_feed_format/);
   });
+  await test('article links permit standard HTTPS only, including normalized explicit port 443',()=>{
+    const links=['https://example.test:8443/blocked','https://example.test:80/blocked','https://example.test:443/standard'];
+    const items=parseNewsFeed(rss(links.map(url=>row({url}))),fixtureFeed);
+    assert.deepEqual(items.map(item=>item.url),['https://example.test/standard']);
+  });
+  await test('CDATA, escaped markup, numeric entities and quoted attributes remain readable',()=>{
+    const xml='<feed\n xml:lang = "en"><entry><title><![CDATA[<b>SOAR</b> &amp; &#x41; &#66; &lt;i&gt;guide&lt;/i&gt;]]></title><link\t rel = "alternate" href = "https://example.test/post?q=a>b"/><category term="SOAR"/></entry></feed>';
+    const [item]=parseNewsFeed(xml,fixtureFeed);assert.equal(item.title,'SOAR & A B guide');
+    assert.equal(item.url,'https://example.test/post?q=a%3Eb');assert.ok(item.topics.includes('SOAR'));
+  });
+  await test('Unicode case folding cannot shift XML tag offsets',()=>{
+    const xml=rss([row({title:'İstanbul security update — café',description:'İstanbul cloud security'})]).replace('<title>Test publisher</title>','<title>İstanbul publisher</title>');
+    const [item]=parseNewsFeed(xml,fixtureFeed);assert.equal(item.title,'İstanbul security update — café');assert.ok(item.topics.includes('Cloud security'));
+  });
+  await test('comments and CDATA cannot introduce extra articles or replace article links',()=>{
+    const xml=rss([`<!--${row({title:'Comment impostor',url:'https://example.test/comment'})}-->`,`<item><title>Actual headline</title><description><![CDATA[<link>https://example.test/quoted</link>]]></description><link>https://example.test/actual</link></item>`]);
+    const items=parseNewsFeed(xml,fixtureFeed);assert.equal(items.length,1);assert.equal(items[0].url,'https://example.test/actual');
+    assert.throws(()=>parseNewsFeed(rss(['<item><title><![CDATA[unterminated</title></item>']),fixtureFeed),/malformed_xml_text/);
+  });
+  await test('unterminated angle-bracket fields are bounded and discarded without backtracking',()=>{
+    const xml=rss([`<item><title>${'<'.repeat(32000)}</title><link>https://example.test/bad</link></item>`,row({title:'Safe following headline',url:'https://example.test/good'})]);
+    const started=performance.now();const items=parseNewsFeed(xml,fixtureFeed);assert.equal(items.length,1);assert.equal(items[0].title,'Safe following headline');
+    assert.ok(performance.now()-started<1000,'Bounded local fixture must not spend a second cleaning 32k malformed title characters.');
+  });
+  await test('repeated unterminated item and Atom entry openers terminate in one forward scan',()=>{
+    for(const tag of ['item','entry']){
+      const xml=rss([`<${tag}>`.repeat(12000)]);const started=performance.now();assert.deepEqual(parseNewsFeed(xml,fixtureFeed),[]);
+      assert.ok(performance.now()-started<1000,'Repeated unmatched entry starts must not trigger repeated whole-feed scans.');
+    }
+  });
+  await test('oversized tag headers and excessive attributes fail closed before extraction',()=>{
+    assert.throws(()=>parseNewsFeed(`<rss ${' '.repeat(8192)}><channel/></rss>`,fixtureFeed),/malformed_xml_tag/);
+    const attrs=Array.from({length:33},(_,i)=>` p${i}="x"`).join('');assert.throws(()=>parseNewsFeed(`<rss${attrs}><channel/></rss>`,fixtureFeed),/malformed_xml_attribute/);
+    assert.throws(()=>parseNewsFeed('<rss xml:lang="en><channel/></rss>',fixtureFeed),/malformed_xml_tag/);
+  });
+  await test('direct parser calls enforce the same overall input ceiling',()=>assert.throws(()=>parseNewsFeed('x'.repeat(2_000_001),fixtureFeed),/feed_too_large/));
+  await test('oversized article links are rejected rather than truncated into other destinations',()=>{
+    const items=parseNewsFeed(rss([row({url:'https://example.test/'+('a'.repeat(9000))}),row({url:'https://example.test/safe'})]),fixtureFeed);
+    assert.deepEqual(items.map(item=>item.url),['https://example.test/safe']);
+  });
+  await test('large title/summary/category fields are bounded before classification',()=>{
+    const [item]=parseNewsFeed(rss([row({title:'A'.repeat(100000),description:'x'.repeat(20000)+' SOAR',tags:['x'.repeat(30000)+' SOAR']})]),fixtureFeed);
+    assert.equal(item.title.length,240);assert.ok(!item.topics.includes('SOAR'));
+  });
   await test('SOAR requires explicit product, taxonomy or expanded phrase evidence',()=>{
     for(const title of ['SOAR security update','Cortex XSOAR guide','Security orchestration, automation and response'])assert.ok(classifyNewsTopics(title).includes('SOAR'));
     assert.ok(classifyNewsTopics('A product guide','',['soar']).includes('SOAR'));
@@ -97,6 +141,10 @@ try {
   await test('off-allowlist redirect is blocked before any request reaches its target',async()=>{
     const requested=[];globalThis.fetch=async url=>{requested.push(String(url));return feedFor(url).id==='cisco-talos'?new Response(null,{status:302,headers:{location:'https://attacker.test/stolen'}}):new Response(feedBody(feedFor(url)));};
     const result=await fetchNews();assert.equal(result.errors.find(error=>error.source==='Cisco Talos').code,'unexpected_redirect_host');assert.equal(requested.length,8);assert.ok(requested.every(url=>!url.includes('attacker.test')));
+  });
+  await test('same-publisher redirect to a nonstandard HTTPS port is blocked before fetching',async()=>{
+    const requested=[];globalThis.fetch=async url=>{requested.push(String(url));return feedFor(url).id==='cisco-talos'?new Response(null,{status:302,headers:{location:'https://blog.talosintelligence.com:8443/internal'}}):new Response(feedBody(feedFor(url)));};
+    const result=await fetchNews();assert.equal(result.errors.find(error=>error.source==='Cisco Talos').code,'unexpected_redirect_host');assert.equal(requested.length,8);assert.ok(requested.every(url=>!url.includes(':8443')));
   });
   await test('oversized feeds are rejected at the bounded body reader',async()=>{
     globalThis.fetch=async url=>new Response(feedFor(url).id==='cloudflare'?'x'.repeat(2_000_001):feedBody(feedFor(url)));

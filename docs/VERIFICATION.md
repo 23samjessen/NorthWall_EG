@@ -1,6 +1,56 @@
-# Verification record — NorthWallEg review demo
+# Verification record — NorthWallEg source and deployment
 
-## Expanded news, contact and insights revision — 23 November 2026
+## Current source validation — 23 November 2026
+
+These results describe the current source. The existing private Site, trusted platform gateway, D1 records and private R2 objects are retained. Preparing the separate Node target has not deployed the application to Hostinger, provisioned a real owner password, connected SMTP delivery or transferred production data.
+
+| Suite | Recorded result | Scope |
+| --- | --- | --- |
+| Shared workspace/backend | **92 passed** | Actual backend with transactional SQLite and private-object fixtures |
+| Shared news | **33 passed** | Deterministic source/parser, fetch, security, cache and timestamp cases |
+| Shared HTTP/security | **17 passed** | HTTPS, nonces, method restrictions, trusted-header handling and private response policy |
+| Core total | **142 passed** | 92 + 33 + 17; not a real MySQL or hosted employee-session result |
+| Node authentication | **32 passed** | Authentication service, temporary-password gate, invitation enrollment, session and abuse-control fixtures |
+| Node storage adapter | **15 passed** | Fixed SQL translation, prepared values, transaction/rollback contract and private BLOB adapter |
+| Node HTTP boundary | **7 passed** | Canonical request origin, trusted identity boundary and HTTP handling |
+| Built Next SSR/API origin | **1 passed** | Actual built Next application in an isolated loopback HTTP fixture |
+
+The backend suite now covers owner-only invitation creation, separate acceptance and approval, seven-day acceptance/approval expiry, generation-bound replay and CAS races, delegated-admin limits, fail-closed legacy/sample accounts and no protected data before approval. It also verifies owner-only **empty real workspace** setup through `workspace.initialize`, labelled sample setup through `demo.initialize`, and refusal to overwrite either existing workspace.
+
+Identity-continuity checks cover revoke/reissue for the same original identity, rejection of a different identity with a recycled email, repeated reissues retaining the anchor, legacy bound-ID retention and lost-binding failure. Replacement staff receive a separate record without the old employee's private notes, DMs or portrait. Non-owner responses and shared audit metadata omit the anchor field.
+
+The Node adapter tests verify exact known SQL, bound literal values, binary identifier/hash conversion, one consistent audit snapshot, paired workspace/audit affected counts, rollback on errors and `INSERT IGNORE` warning handling. Portrait tests cover private BLOB bytes, limits and metadata. These scripted-driver cases do not demonstrate MySQL engine locking or a hosting account's capacity.
+
+The built-Next test uses the actual compiled application and confirms matching script/CSP nonces, private/no-store and noindex responses, preserved request-body bytes, the canonical HTTPS API origin, rejection of cross-origin writes and refusal to treat forged visitor headers as authenticated identity. It intentionally stops before database access and uses no real employee account, production session or mailbox.
+
+Integrated nonincremental TypeScript and diff checks passed. The current Worker and Node production builds passed, as did the built-Next render test. These source/build results are separate from historical Site publication evidence below. The authentication, storage and request-boundary source also received focused review; this is implementation review, not an independent penetration test or certification.
+
+## Pending release gates
+
+- **Real MySQL CI results are not yet observed.** The GitHub workflow is configured to run the storage suite's seven real-engine scenarios and the auth suite's five scenarios against separate dedicated fixture databases using the official MySQL 8.4 service image. Do not mark them passed until the workflow result is recorded. The storage gate checks actual setup/CAS concurrency, invitation persistence, a write between audit SELECTs, audit-failure rollback, a 2 MiB BLOB round trip and photo orphan cleanup.
+- **The next private Site publication and its HTTP verification are pending.** The version-5 observations below are historical and cannot establish that the newer invitation, identity-continuity or empty-setup code is already deployed. Keep the Site private and noindex.
+- **Hostinger deployment is not verified.** The selected plan/runtime, actual MySQL schema/packet allowance, HTTPS/renewal/redirect behavior, secure sessions and staged restore still require destination checks.
+- **No live SMTP delivery or real owner-password provisioning is claimed.** Code and fixture checks exist. Mailbox credentials, hidden terminal provisioning, email-code delivery and the first-use password-change journey must be verified on the destination.
+- **Existing data and identity migration are not complete.** Preserve the current Site while reviewing D1/R2 backups, MySQL import, authentication identity mapping and independent restore evidence. A source archive or audit export is not a complete backup.
+
+## Historical security-hardening revision and Site v5 — 23 November 2026
+
+- Integrated TypeScript check passed after the framework, build tool and validator updates.
+- **106 automated checks passed:** 56 workspace/backend checks, 33 news checks and 17 HTTP security/validator checks. These use local fixtures, transactional SQLite and a private-object test adapter; they do not impersonate a production employee or scan third-party systems.
+- SQL-looking values remained literal bound data. Malicious record selectors did not widen access or modify the schema. Employee/manager restrictions, private notes and direct messages, disabled accounts, upload permissions and administrator evidence access passed their regression checks.
+- New request-body cases cover omitted, misleading and oversized Content-Length values. Workspace JSON is streamed within 64 KiB; photo-deletion JSON within 4 KiB. Exact JSON media-type validation rejects lookalike values.
+- Audit-export checks covered a concurrent valid write, administrator revocation during export and an oversized UTF-8 history. The export uses one transactionally consistent snapshot, rechecks authorization and rejects over 10,000 events or 8 MiB of stored event-column data before retrieving event rows.
+- New HTTP checks cover production HTTP-to-HTTPS redirects without trusting visitor forwarding headers, unpredictable per-request script nonces, visitor-header replacement, public method/action restrictions, private HTML/RSC/API caching, noindex, browser headers and preservation of the photo response's stricter sandbox. The unsupported generic Node startup path fails closed.
+- A fresh full `npm audit --json --audit-level=high` completed successfully with **0 info, 0 low, 0 moderate, 0 high and 0 critical vulnerabilities** in the resolved dependency tree. This is a time-specific advisory scan, not a guarantee that the software has no vulnerabilities.
+- The production Worker, SSR and client build passed. Upstream source-map and route-classification warnings remained; no compilation error occurred.
+- The scoped esbuild override was verified with the actual Drizzle configuration/schema through its legacy loader, followed by schema generation into a disposable directory. Both commands exited successfully. The existing configuration, schema, package, lock and migration files remained unchanged; no database migration was applied.
+- A separate read-only review confirmed Vinext 1.2.0 propagates the request CSP nonce to framework bootstrap and streamed scripts and excludes those requests from its shared response cache. Post-publication HTTP verification is recorded separately from these local checks; browser sign-in/hydration and authenticated employee journeys remain outside this local evidence.
+
+**Historical deployment evidence:** private Site version 5 was deployed from `ea5ff9fa500b6087c380918c41b5dfc5ad32c855`. Supported service-access HTTP verification passed for four HTML responses with distinct matching script/CSP nonces, private/no-store caching and noindex; protected workspace/photo APIs returned 401 without employee identity; public POST and unsupported action dispatch returned 405/400. News returned live coverage with 48 headlines across eight publishers and no errors, fetched at `2026-11-23T00:49:38.531Z`. These checks did not exercise browser hydration or a real employee session and do not verify a later source revision.
+
+See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for scope, versions and remaining risks. At the time of this historical Site check, the Node target had not been added. The current source includes that separate target, while actual Hostinger deployment and migration remain pending as listed above.
+
+## Historical expanded-news, contact and insights revision — 23 November 2026
 
 - Integrated TypeScript check passed. The existing 44 workspace/backend checks and the new 22 deterministic news checks passed. The news suite covers unsafe links/redirects, XML declarations, language, real date handling, topic evidence and negation, source balance, duplicate articles, partial/total failure, shared caching and fallback timestamps.
 - A real eight-source refresh returned 48 headlines, six per configured source, with no feed errors at `2026-11-23T00:04:05.183Z`. Eight selected articles matched explicit SOAR evidence. The saved snapshot contains these actual responses; publisher publication dates were retained.
@@ -13,7 +63,7 @@
 
 The observations below are retained as evidence from earlier revisions. Their three-source news counts describe the earlier deployment, not the expanded feed above.
 
-## Automated checks
+## Earlier automated checks
 
 - TypeScript: `npx tsc --noEmit` passed on the integrated source.
 - Production Worker/client build: Sites build helper passed.
@@ -22,13 +72,13 @@ The observations below are retained as evidence from earlier revisions. Their th
 
 The backend checks cover missing identity, unauthorized bootstrap, same-origin enforcement, active membership, privilege escalation, one-time setup, private notes/DMs, inaccessible forwarding, admin-only evidence, private-content redaction, stable identity binding, working automation, required fields, member deactivation, stale/concurrent writes and audit tamper detection.
 
-## Browser observations
+## Earlier browser observations
 
 The development preview was opened in the browser and visually inspected. The new hero image, NW branding, public page composition, English navigation, Arabic RTL layout, service filtering, Midnight colour switching and a service-detail modal/page rendered. The signed-out workspace displayed the intended access screen, without private records. The managed local preview does not simulate employee identity.
 
 The separate review site uses production hosting. The earlier public NorthWall site is outside this demo's deployment and is not modified.
 
-## Hosted deployment observations
+## Earlier hosted deployment observations — 22 November 2026
 
 - Private publication succeeded at `https://northwalleg-design-demo.dark-hawk-6582.chatgpt.site/` on 22 November 2026. The confirmed Site audience is the owner only.
 - The hosted D1 binding `DB` contains the migrated `workspace` and `audit_events` tables.
@@ -36,7 +86,7 @@ The separate review site uses production hosting. The earlier public NorthWall s
 - The browser displayed the intended private-site sign-in gate. That browser did not have the owner's authenticated session. No password was collected, no identity headers were fabricated and no production authentication bypass was introduced.
 - Consequently, end-user hosted sign-in, first-use sample initialisation and authenticated hosted writes were **not exercised in that browser**. The owner can review these by opening the demo, signing in and choosing **Load sample workspace**. The schema is deployed, but this record does not claim an observed owner-authenticated production write.
 
-## Isolated workspace interaction checks
+## Earlier isolated workspace interaction checks
 
 The production workspace component and styles were bundled into a separate, clearly labelled visual-test fixture. It used fictional in-browser records and the actual action reducer, with no access to the hosted database or real employee accounts. These checks validate interaction and layout separately from deployed authentication and persistence:
 
@@ -48,9 +98,9 @@ The production workspace component and styles were bundled into a separate, clea
 - Viewed the administrator evidence table and inspected an event's actor, UTC timestamp, action, change, request ID and previous/current hashes. These particular browser events belonged to the synthetic fixture; actual server audit integrity is covered by the backend tests.
 - Fixed a calendar CSS selector that accidentally constrained event labels to the date-number width. Rebuilt the fixture and visually confirmed events use the available cell width.
 
-Final review also corrected nullable news retrieval timestamps, preserved the last successful retrieval time during refresh failures, distinguished checks from retrievals, and aligned both interfaces to request news every two minutes while open. Account-link labels now match the backend's first-successful-write binding behaviour.
+That review also corrected nullable news retrieval timestamps, preserved the last successful retrieval time during failures, separated checks from retrievals and aligned both interfaces to poll every two minutes. Its account-link labels reflected the then-current first-write binding. Current source supersedes that behavior with explicit invitation acceptance, separate owner approval and a retained identity-continuity anchor.
 
-## Profile and company-content revision — 23 November 2026
+## Historical profile and company-content revision — 23 November 2026
 
 - The integrated TypeScript check passed with the new employee profile component, member fields and private photo endpoint.
 - Backend checks cover required profile fields, field-length limits, self/admin permissions, rejected role or identity escalation, active-member photo reads, MIME/signature/dimension bounds, same-origin writes, one-photo replacement, stale-revision rejection and orphan cleanup.

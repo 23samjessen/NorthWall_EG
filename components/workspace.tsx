@@ -4,7 +4,7 @@ import { Activity, Archive, ArrowDown, ArrowUp, Bell, BookOpen, CalendarDays, Ch
 import { NWMark } from "@/components/brand";
 import EmployeeProfile, { EmployeePortrait } from "@/components/employee-profile";
 import NewsExplorer from "@/components/news-explorer";
-import type { AuditEntry, CalendarEvent, Comment, Member, Message, Note, Ticket, WorkspaceAction, WorkspaceResponse } from "@/lib/workspace-types";
+import type { AuditEntry, CalendarEvent, Comment, Member, Message, Note, OnboardingResponse, Ticket, WorkspaceAction, WorkspaceResponse } from "@/lib/workspace-types";
 type NewsItem = {
     id: string;
     title: string;
@@ -29,6 +29,8 @@ type ModalState = {
     type: string;
     data?: any;
 } | null;
+type OnboardingState = OnboardingResponse;
+type MemberAccess = OnboardingState["status"] | "owner" | "sample";
 type Resource = {
     id: string;
     title: string;
@@ -85,6 +87,22 @@ function dateInput(value?: string | null) { if (!value)
 function localDateTime(value?: string) { const d = value ? new Date(value) : new Date(); const p = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 function dayKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function readable(name: string) { return name.charAt(0).toUpperCase() + name.slice(1); }
+function accessForMember(user: Member, time = Date.now()): MemberAccess {
+    if (user.id === "owner") return "owner";
+    if (user.sample) return "sample";
+    // The server derives active access and omits other members' invitation
+    // metadata from non-owner directories. Legacy unapproved rows are inactive.
+    if (!user.onboarding) return user.active ? "approved" : "not_invited";
+    if (user.onboarding.status === "revoked") return "revoked";
+    if (user.onboarding.status === "approved") return user.active ? "approved" : "revoked";
+    const deadline = new Date(user.onboarding.expiresAt).getTime();
+    if (!Number.isFinite(deadline) || deadline <= time) return "expired";
+    return user.onboarding.status;
+}
+function invitationTime(value: string) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Time unavailable" : `${date.toLocaleString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} UTC`;
+}
 function Avatar({ user, small = false }: {
     user?: Member;
     small?: boolean;
@@ -124,10 +142,68 @@ function tickerHeadlines(items: NewsItem[]) {
     const urls = new Set(selected.map(item => item.url));
     return [...selected, ...items.filter(item => !urls.has(item.url))].slice(0, 12);
 }
+function WorkspaceAccessGate({ status, onboarding, error, busy, onAccept, onRefresh }: {
+    status: string;
+    onboarding: OnboardingState | null;
+    error: string;
+    busy: boolean;
+    onAccept: () => void;
+    onRefresh: () => void;
+}) {
+    const denied = status === "denied";
+    const invitation = onboarding?.status;
+    const titles: Record<OnboardingState["status"], string> = {
+        invited: "Your invitation is ready",
+        pending_approval: "Waiting for owner approval",
+        approved: "Your access is approved",
+        revoked: "Your access has been revoked",
+        expired: "Your invitation has expired",
+        not_invited: "An owner invitation is required",
+    };
+    const descriptions: Record<OnboardingState["status"], string> = {
+        invited: "Accept the invitation for your sign-in email. The owner must then approve your access before you can enter the employee workspace.",
+        pending_approval: "You have accepted your invitation. The workspace owner must review and approve it before any employee tools or records become available.",
+        approved: "The owner has approved your employee access. Refresh to open your workspace.",
+        revoked: "The owner has withdrawn this invitation or workspace access. Contact the owner if you need a new invitation.",
+        expired: "The acceptance and approval window has ended. Ask the owner to create a new invitation, then accept it again.",
+        not_invited: "This sign-in email does not have a current owner invitation. Contact the workspace owner; accounts cannot register themselves here.",
+    };
+    const accepted = !!onboarding?.acceptedAt || invitation === "pending_approval" || invitation === "approved";
+    const stage = invitation === "approved" ? 3 : accepted ? 2 : invitation === "invited" ? 1 : 0;
+    return <div className="nw-workspace"><div className="nw-signin">
+        <section className="nw-signin-art">
+            <a className="nw-brand" href="/"><span className="nw-mark"><NWMark /></span>NorthWallEg</a>
+            <div><span className="nw-eyebrow">The team, connected</span><h1>Good work starts<br />with clarity.</h1><p>One place for your projects, conversations and the knowledge that keeps your clients moving.</p></div>
+            <footer>Work board · Team chat · Knowledge · Evidence</footer>
+        </section>
+        <section className="nw-signin-form"><div className="nw-signin-box nw-access-box">
+            <span className="nw-access-symbol">{invitation === "pending_approval" ? <Clock3 size={27}/> : invitation === "approved" ? <CheckCircle2 size={27}/> : <LockKeyhole size={27}/>}</span>
+            <span className="nw-access-eyebrow">Invitation-only employee access</span>
+            <h2 aria-live="polite">{denied ? invitation ? titles[invitation] : error ? "Invitation status unavailable" : "Checking your invitation" : status === "error" ? "Let’s reconnect" : "Welcome to the workspace"}</h2>
+            <p>{denied ? invitation ? descriptions[invitation] : "Your account cannot open the workspace yet. Refresh to check its invitation status." : status === "error" ? "The workspace could not be reached. Please try again." : "Sign in with the email address the owner invited. Signing in alone does not create membership or approve access."}</p>
+            {denied && onboarding?.email && <div className="nw-access-email"><span>Signed in as</span><strong>{onboarding.email}</strong></div>}
+            {denied && onboarding && <ol className="nw-access-steps" aria-label="Employee access steps">{["Owner invitation", "Your acceptance", "Owner approval"].map((label, index) => <li key={label} className={stage > index ? "complete" : stage === index && (invitation === "invited" || invitation === "pending_approval") ? "current" : ""}><span>{stage > index ? <Check size={13}/> : index + 1}</span>{label}</li>)}</ol>}
+            {denied && onboarding?.acceptedAt && <p className="nw-access-time">Accepted <time dateTime={onboarding.acceptedAt}>{invitationTime(onboarding.acceptedAt)}</time></p>}
+            {denied && onboarding?.expiresAt && (invitation === "invited" || invitation === "pending_approval" || invitation === "expired") && <p className="nw-access-time">Acceptance and approval deadline <time dateTime={onboarding.expiresAt}>{invitationTime(onboarding.expiresAt)}</time></p>}
+            {error && <div className="nw-alert error" role="alert">{error}</div>}
+            <div className="nw-access-actions">
+                {denied ? <>
+                    {invitation === "invited" && <button className="nw-button" disabled={busy || !onboarding?.invitationId} onClick={onAccept}>{busy ? <Loader2 size={16} className="nw-spinner"/> : <CheckCircle2 size={16}/>}Accept invitation</button>}
+                    <button className={`nw-button${invitation === "invited" ? " secondary" : ""}`} disabled={busy} onClick={onRefresh}>{busy ? <Loader2 size={16} className="nw-spinner"/> : <Activity size={16}/>} {invitation === "approved" ? "Open workspace" : invitation === "pending_approval" ? "Check approval status" : "Refresh access status"}</button>
+                    <a className="nw-text-link" href="/signout-with-chatgpt?return_to=%2Fworkspace" target="_top">Use another sign-in account</a>
+                </> : status === "error" ? <button className="nw-button" disabled={busy} onClick={onRefresh}>Try again</button> : <a className="nw-button" href="/signin-with-chatgpt?return_to=%2Fworkspace" target="_top"><LockKeyhole size={16}/>Sign in to workspace</a>}
+                <a href="/" className="nw-button ghost">Back to NorthWallEg</a>
+            </div>
+            {denied && <div className="nw-access-note">The owner creates invitations and approves employee access. Private Site sharing is a separate hosting requirement.</div>}
+            <span className="nw-demo-label">Private review demo</span>
+        </div></section>
+    </div></div>;
+}
 export default function Workspace() {
     const [data, setData] = useState<WorkspaceResponse | null>(null);
     const dataRef = useRef<WorkspaceResponse | null>(null);
     const [status, setStatus] = useState<"loading" | "ready" | "signin" | "denied" | "error">("loading");
+    const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
     const [error, setError] = useState("");
     const [view, setView] = useState<View>("overview");
     const [profileMemberId, setProfileMemberId] = useState<string | null>(null);
@@ -157,7 +233,8 @@ export default function Workspace() {
     const [newsPaused, setNewsPaused] = useState(false);
     const [adminTab, setAdminTab] = useState("Team");
     const searchRef = useRef<HTMLInputElement>(null);
-    const accept = useCallback((next: WorkspaceResponse) => { dataRef.current = next; setData(next); setStatus("ready"); }, []);
+    const accept = useCallback((next: WorkspaceResponse) => { dataRef.current = next; setData(next); setOnboarding(null); setStatus("ready"); }, []);
+    const clearWorkspace = useCallback(() => { dataRef.current = null; setData(null); setModal(null); setSelectedTicket(null); setShowNotifications(false); }, []);
     const load = useCallback(async (quiet = false) => {
         try {
             const r = await fetch("/api/workspace", { cache: "no-store" });
@@ -166,12 +243,24 @@ export default function Workspace() {
             };
             if (!r.ok) {
                 if (r.status === 401) {
+                    clearWorkspace();
+                    setOnboarding(null);
+                    setError("");
                     setStatus("signin");
                     return;
                 }
                 if (r.status === 403) {
+                    clearWorkspace();
                     setStatus("denied");
-                    setError(next.error || "Your account has not been added to this team.");
+                    try {
+                        const invitationResponse = await fetch("/api/workspace?view=onboarding", { cache: "no-store" });
+                        const invitation = await invitationResponse.json() as OnboardingState & { error?: string };
+                        if (invitationResponse.status === 401) { setOnboarding(null); setError(""); setStatus("signin"); return; }
+                        if (!invitationResponse.ok || !["invited", "pending_approval", "approved", "revoked", "expired", "not_invited"].includes(invitation.status)) throw new Error(invitation.error || "Your invitation status could not be checked. Please refresh.");
+                        setOnboarding(invitation);
+                        setError("");
+                    }
+                    catch (e) { setOnboarding(null); setError(e instanceof Error ? e.message : "Your invitation status could not be checked."); }
                     return;
                 }
                 throw new Error(next.error || "The workspace could not be loaded.");
@@ -186,7 +275,23 @@ export default function Workspace() {
                 setStatus("error");
             }
         }
-    }, [accept]);
+    }, [accept, clearWorkspace]);
+    const acceptInvitation = async () => {
+        if (busy || onboarding?.status !== "invited" || !onboarding.invitationId) return;
+        setBusy(true);
+        setError("");
+        try {
+            const response = await fetch("/api/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "invitation.accept", payload: { invitationId: onboarding.invitationId } }) });
+            const result = await response.json() as OnboardingState & { error?: string };
+            if (!response.ok) { await load(true); throw new Error(result.error || "The invitation could not be accepted. Refresh its status and try again."); }
+            setOnboarding(result);
+            setStatus("denied");
+            if (result.status === "approved") await load();
+        }
+        catch (e) { setError(e instanceof Error ? e.message : "The invitation could not be accepted."); }
+        finally { setBusy(false); }
+    };
+    const refreshAccess = async () => { if (busy) return; setBusy(true); await load(); setBusy(false); };
     useEffect(() => { void load(); const timer = setInterval(() => void load(true), 15000); const clock = setInterval(() => setNow(new Date()), 30000); return () => { clearInterval(timer); clearInterval(clock); }; }, [load]);
     useEffect(() => { if (!toast)
         return; const t = setTimeout(() => setToast(""), 4000); return () => clearTimeout(t); }, [toast]);
@@ -264,8 +369,10 @@ export default function Workspace() {
             const r = await fetch("/api/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, payload, revision: modalRevision.current ?? dataRef.current.revision }) });
             const result = await r.json() as WorkspaceResponse & {
                 error?: string;
+                code?: string;
             };
-            if (r.status === 409) {
+            if (r.status === 401 || r.status === 403) await load(true);
+            if (r.status === 409 && result.code === "revision_conflict") {
                 await load(true);
                 setModal(null);
                 throw new Error("The workspace changed while you were editing. Your change was not saved. Reopen the item to review its current details before editing again.");
@@ -305,7 +412,10 @@ export default function Workspace() {
     const state = data?.state;
     const me = data?.user;
     const isAdmin = me?.role === "admin";
+    const isOwner = me?.id === "owner";
     const users = state?.users || [];
+    const profileUsers = users.filter(u => !u.sample && ["owner", "approved"].includes(accessForMember(u, now.getTime())));
+    const profileTarget = isAdmin && profileMemberId ? profileUsers.find(u => u.id === profileMemberId) || me : me;
     const member = (id: string | null | undefined) => users.find(u => u.id === id);
     const activeTickets = state?.tickets.filter(t => !t.archived) || [];
     const doneIds = new Set(state?.columns.filter(c => c.isDone).map(c => c.id));
@@ -347,7 +457,7 @@ export default function Workspace() {
     if (status === "loading")
         return <div className="nw-workspace"><div className="nw-loading"><span className="nw-mark"><NWMark /></span><span className="nw-spinner"/><span>Opening your workspace</span></div></div>;
     if (!data || status === "signin" || status === "denied")
-        return <div className="nw-workspace"><div className="nw-signin"><section className="nw-signin-art"><a className="nw-brand" href="/"><span className="nw-mark"><NWMark /></span>NorthWallEg</a><div><span className="nw-eyebrow">The team, connected</span><h1>Good work starts<br />with clarity.</h1><p>One place for your projects, conversations and the knowledge that keeps your clients moving.</p></div><footer>Work board · Team chat · Knowledge · Evidence</footer></section><section className="nw-signin-form"><div className="nw-signin-box"><LockKeyhole size={28} color="#bb593d"/><h2>{status === "denied" ? "Team access required" : status === "error" ? "Let’s reconnect" : "Welcome to the workspace"}</h2><p>{status === "denied" ? error : status === "error" ? error : "Sign in with your approved team account to open the NorthWallEg employee workspace."}</p>{status === "error" ? <button className="nw-button" onClick={() => void load()}>Try again</button> : <a className="nw-button" href="/signin-with-chatgpt?return_to=%2Fworkspace" target="_top"><LockKeyhole size={16}/>Sign in to workspace</a>}<a href="/" className="nw-button ghost" style={{ marginTop: 10 }}>Back to NorthWallEg</a><span className="nw-demo-label">Private review demo</span></div></section></div></div>;
+        return <WorkspaceAccessGate status={status} onboarding={onboarding} error={error} busy={busy} onAccept={() => void acceptInvitation()} onRefresh={() => void refreshAccess()}/>;
     function PriorityBadge({ priority }: {
         priority: string;
     }) { return <span className={`nw-pill ${readable(priority)}`}><Flag size={10}/>{readable(priority)}</span>; }
@@ -399,7 +509,66 @@ export default function Workspace() {
         const guides = runbooks.filter(r => !query || `${r.title} ${r.product} ${r.summary}`.toLowerCase().includes(query.toLowerCase()));
         return <><section className="nw-library-hero"><div><span className="nw-eyebrow">Knowledge that moves work forward</span><h2>Your team’s practical reference desk.</h2><p>Official guidance, original troubleshooting checklists, and the admin links you reach for every day.</p></div><BookOpen strokeWidth={1}/></section><div className="nw-toolbar"><div className="nw-search-input"><Search size={15}/><input className="nw-input" placeholder="Find a guide, standard or tool…" aria-label="Search library" value={query} onChange={e => setQuery(e.target.value)}/></div><select className="nw-select" aria-label="Resource category" value={libraryTab} onChange={e => setLibraryTab(e.target.value)}>{tabs.map(t => <option key={t}>{t}</option>)}</select><span className="nw-small nw-spacer">{resources.length} resources · {runbooks.length} runbooks</span></div><div className="nw-resource-grid">{libraryTab === "M365 runbooks" ? guides.map(r => <article className="nw-resource-card" key={r.id}><div className="nw-flex-between"><span className="nw-pill blue">{r.product}</span><FileText size={17} color="#879987"/></div><h3>{r.title}</h3><p>{r.summary}</p><footer><span>{r.estimatedMinutes} min · {r.steps.length} steps</span><button className="nw-text-link" onClick={() => setModal({ type: "runbook", data: r })}>Open runbook</button></footer></article>) : list.map(r => <article className="nw-resource-card" key={r.id}><div className="nw-flex-between"><span className="nw-pill gray">{r.category}</span>{r.category.toLowerCase().includes("iso") ? <Shield size={17} color="#879987"/> : <BookOpen size={17} color="#879987"/>}</div><h3>{r.title}</h3><p>{r.description}</p><div className="nw-tag-list">{r.tags?.slice(0, 3).map(t => <span key={t}>{t}</span>)}</div><footer><span>{r.publisher}</span><a className="nw-text-link" href={r.url} target="_blank" rel="noreferrer">Official source <ExternalLink size={11}/></a></footer></article>)}</div>{(libraryTab === "M365 runbooks" ? !guides.length : !list.length) && <Empty title="No resources match this search" icon={BookOpen}><p>Try a different term or category.</p></Empty>}<div className="nw-info-box"><Shield size={13} style={{ display: "inline", verticalAlign: "middle", marginRight: 6 }}/>ISO entries link to official descriptions and licensed publications. The library’s checklists are original practical summaries; full paid standards are not reproduced. Resource links reviewed {knowledge.verifiedOn || "for this demo"}.</div></>;
     };
-    const renderAdmin = () => <><div className="nw-toolbar"><div className="nw-tabs">{["Team", "Workflow", "Automations", "Settings"].map(t => <button className={adminTab === t ? "active" : ""} key={t} onClick={() => setAdminTab(t)}>{t}</button>)}</div><span className="nw-small nw-spacer">Admin access · Changes are recorded</span></div>{adminTab === "Team" ? <section className="nw-panel"><div className="nw-panel-head"><div><h2>People & permissions</h2><p>Approve a team email, then let that person sign in with their own account</p></div><button className="nw-button" onClick={() => setModal({ type: "member" })}><UserPlus size={15}/>Add member</button></div><div className="nw-table-wrap"><table><thead><tr><th>Team member</th><th>Role</th><th>Access</th><th>Account</th><th>Profile</th><th /></tr></thead><tbody>{users.map(u => <tr key={u.id}><td><div className="nw-person"><Avatar user={u}/><div><b style={{ fontWeight: 500 }}>{u.name}{u.sample && <span className="nw-pill gray" style={{ marginLeft: 6 }}>Sample</span>}</b><div className="nw-small">{u.jobTitle || "Job title to be added"}</div><div className="nw-small">{u.email}</div></div></div></td><td>{readable(u.role)}</td><td><span className={`nw-pill${u.active ? "" : " gray"}`}>{u.active ? "Approved" : "Disabled"}</span></td><td className="nw-small">{u.userId ? "Linked" : "Pending account link"}</td><td className="nw-small">{u.photoUrl && u.jobTitle ? "Complete" : !u.photoUrl && !u.jobTitle ? "Photo + title needed" : !u.photoUrl ? "Photo needed" : "Title needed"}<button className="nw-text-link" onClick={() => { go("profile"); setProfileMemberId(u.id); }}>Manage profile</button></td><td><button className="nw-icon-button" title="Edit member" onClick={() => setModal({ type: "member", data: u })}><Pencil size={14}/></button></td></tr>)}</tbody></table></div><div className="nw-panel-body nw-small">Adding an email grants workspace membership. It does not send an invitation message. Share the workspace link separately after access is approved.</div></section> : adminTab === "Workflow" ? <div className="nw-admin-grid"><section className="nw-panel"><div className="nw-panel-head"><div><h2>Board columns</h2><p>Design the stages that match how you work</p></div><button className="nw-button secondary small" onClick={() => setModal({ type: "column" })}><Plus size={13}/>Add</button></div>{state!.columns.map((c, i) => <div className="nw-settings-row" key={c.id}><span className="nw-column-color" style={{ background: c.color }}/><div>{c.name}<small>{c.isDone ? "Counts as completed" : "Counts as open"} · {activeTickets.filter(t => t.status === c.id).length} tickets</small></div><button className="nw-icon-button" style={{ marginLeft: 0, width: 25 }} disabled={i === 0 || busy} title="Move column earlier" onClick={() => { const ids = state!.columns.map(x => x.id); [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]]; void mutate("column.reorder", { ids }, "Column order saved"); }}><ChevronUp size={12}/></button><button className="nw-icon-button" style={{ marginLeft: 0, width: 25 }} disabled={i === state!.columns.length - 1 || busy} title="Move column later" onClick={() => { const ids = state!.columns.map(x => x.id); [ids[i], ids[i + 1]] = [ids[i + 1], ids[i]]; void mutate("column.reorder", { ids }, "Column order saved"); }}><ChevronDown size={12}/></button><button className="nw-icon-button" style={{ marginLeft: 0 }} title="Edit column" onClick={() => setModal({ type: "column", data: c })}><Pencil size={13}/></button></div>)}</section><section className="nw-panel"><div className="nw-panel-head"><div><h2>Custom ticket fields</h2><p>Add the details your team needs to capture</p></div><button className="nw-button secondary small" onClick={() => setModal({ type: "field" })}><Plus size={13}/>Add</button></div>{state!.customFields.map(f => <div className="nw-settings-row" key={f.id}><SlidersHorizontal size={15} color="#869582"/><div>{f.name}<small>{readable(f.type)} · {f.required ? "Required" : "Optional"}{f.options.length ? ` · ${f.options.join(", ")}` : ""}</small></div><button className="nw-icon-button" title="Edit custom field" onClick={() => setModal({ type: "field", data: f })}><Pencil size={13}/></button></div>)}{!state!.customFields.length && <Empty title="Make it your own" icon={SlidersHorizontal}><p>Add an asset ID, site, service tier or approval field.</p></Empty>}</section></div> : adminTab === "Automations" ? <section className="nw-panel"><div className="nw-panel-head"><div><h2>Workflow automations</h2><p>Match ticket creation or updates, then assign, move or alert</p></div><button className="nw-button" onClick={() => setModal({ type: "rule" })}><Plus size={15}/>New rule</button></div>{state!.rules.map(r => <div className="nw-settings-row" key={r.id}><Sparkles size={17} color="#ad8a59"/><div>{r.name}<small>When {r.trigger.replace(".", " is ")} · {r.priority === "any" ? "any priority" : `${r.priority} priority`}{r.assignToId ? ` · assign ${member(r.assignToId)?.name}` : ""}{r.moveToId ? ` · move to ${state!.columns.find(c => c.id === r.moveToId)?.name}` : ""}</small></div><span className={`nw-pill${r.enabled ? "" : " gray"}`}>{r.enabled ? "Enabled" : "Paused"}</span><button className="nw-icon-button" title="Edit rule" onClick={() => setModal({ type: "rule", data: r })}><Pencil size={13}/></button></div>)}{!state!.rules.length && <Empty title="Let routine work take care of itself" icon={Sparkles}><p>For example: assign critical tickets to the service lead and notify the response team.</p></Empty>}<div className="nw-panel-body nw-small">Rules run on saved ticket changes. They do not send external email, SMS or push notifications; alerts appear inside the workspace.</div></section> : <section className="nw-panel"><div className="nw-panel-head"><h2>Workspace settings</h2></div><form className="nw-panel-body" onSubmit={async (e) => { e.preventDefault(); const f = new FormData(e.currentTarget); await mutate("settings.update", { name: String(f.get("name")), timeZone: String(f.get("timeZone")) }, "Workspace settings saved"); }}><div className="nw-form-grid"><Field label="Workspace name"><FormText name="name" value={state!.settings.name} required/></Field><Field label="Workspace time zone"><select className="nw-select" name="timeZone" defaultValue={state!.settings.timeZone}><option value="Africa/Cairo">Cairo</option><option value="Europe/Copenhagen">Copenhagen</option><option value="Europe/Stockholm">Stockholm</option><option value="UTC">UTC</option></select></Field></div><button className="nw-button" disabled={busy}>Save settings</button><div className="nw-info-box">Employee access uses individual sign-in accounts. There is no shared administrator password in the website code. Membership and roles are controlled in the Team tab.</div></form></section>}</>;
+    const revokeMember = (user: Member) => setModal({ type: "confirm", data: {
+        title: `Revoke access for ${user.name}?`,
+        description: "This withdraws the invitation or approved access. The person will need a new invitation, acceptance and owner approval to return. Existing work and audit evidence are retained.",
+        action: "member.revoke", payload: { id: user.id }, label: "Revoke access", success: "Invitation and workspace access revoked",
+    } });
+    const reinviteMember = (user: Member) => setModal({ type: "confirm", data: {
+        title: `Create a new invitation for ${user.name}?`,
+        description: "The previous invitation will be replaced. This person must accept the new invitation and receive your approval within seven days. The invitation starts with the employee role and does not send an email.",
+        action: "member.reinvite", payload: { id: user.id }, label: "Create new invitation", success: "New invitation created. Copy its message to share it.",
+    } });
+    const memberTimestamps = (user: Member) => user.onboarding && <dl className="nw-invitation-dates">
+        <div><dt>Invited</dt><dd><time dateTime={user.onboarding.invitedAt}>{invitationTime(user.onboarding.invitedAt)}</time></dd></div>
+        {user.onboarding.acceptedAt && <div><dt>Accepted</dt><dd><time dateTime={user.onboarding.acceptedAt}>{invitationTime(user.onboarding.acceptedAt)}</time></dd></div>}
+        {user.onboarding.approvedAt ? <div><dt>Approved</dt><dd><time dateTime={user.onboarding.approvedAt}>{invitationTime(user.onboarding.approvedAt)}</time></dd></div> : <div><dt>Deadline</dt><dd><time dateTime={user.onboarding.expiresAt}>{invitationTime(user.onboarding.expiresAt)}</time></dd></div>}
+        {user.onboarding.revokedAt && <div><dt>Revoked</dt><dd><time dateTime={user.onboarding.revokedAt}>{invitationTime(user.onboarding.revokedAt)}</time></dd></div>}
+    </dl>;
+    const renderTeam = () => {
+        const pending = users.filter(u => accessForMember(u, now.getTime()) === "pending_approval");
+        const accessLabels: Record<MemberAccess, string> = {
+            owner: "Owner access", sample: "Sample · no sign-in", invited: "Awaiting acceptance", pending_approval: "Awaiting owner approval",
+            approved: "Approved", revoked: "Revoked", expired: "Invitation expired", not_invited: "Invitation required",
+        };
+        return <div className="nw-team-access">
+            <section className="nw-access-policy">
+                <div className="nw-access-policy-heading"><Shield size={21}/><div><h2>{isOwner ? "You control who joins the team" : "Employee access is controlled by the owner"}</h2><p>{isOwner ? "Invite a person, wait for their acceptance, then approve their employee access." : "Your administrator role manages workspace features and evidence. Only the owner can invite people, approve or revoke access, and change roles."}</p></div></div>
+                <ol className="nw-owner-access-flow"><li><span>1</span><div><strong>Owner invites</strong><small>Employee access stays off</small></div></li><li><span>2</span><div><strong>Person accepts</strong><small>Identity matches the invited email</small></div></li><li><span>3</span><div><strong>Owner approves</strong><small>Employee workspace opens</small></div></li></ol>
+            </section>
+            {isOwner && pending.length > 0 && <section className="nw-panel nw-approval-panel">
+                <div className="nw-panel-head"><div><h2>Ready for your approval <span className="nw-pill">{pending.length}</span></h2><p>These people accepted their invitations. They still cannot open the workspace.</p></div><Clock3 size={21}/></div>
+                <div className="nw-approval-list">{pending.map(user => <article className="nw-approval-card" key={user.id}>
+                    <div className="nw-person"><Avatar user={user}/><div><h3>{user.name}</h3><p>{user.email}</p></div></div>
+                    {memberTimestamps(user)}
+                    <div className="nw-approval-actions"><button className="nw-button small" disabled={busy} onClick={() => setModal({ type: "approveMember", data: { id: user.id } })}><CheckCircle2 size={15}/>Review & approve</button><button className="nw-text-link nw-access-revoke" disabled={busy} onClick={() => revokeMember(user)}>Revoke invitation</button></div>
+                </article>)}</div>
+            </section>}
+            <section className="nw-panel">
+                <div className="nw-panel-head"><div><h2>People & permissions</h2><p>{isOwner ? "Invitations, accepted accounts and employee access" : "Team access and profile directory"}</p></div>{isOwner && <button className="nw-button" disabled={busy} onClick={() => setModal({ type: "member" })}><UserPlus size={15}/>Create invitation</button>}</div>
+                <div className="nw-table-wrap"><table className="nw-members-table"><thead><tr><th>Team member</th><th>Role</th><th>Access</th><th>Account</th><th>Profile</th><th><span className="nw-sr-only">Owner actions</span></th></tr></thead><tbody>{users.map(user => {
+                    const access = accessForMember(user, now.getTime());
+                    const approved = access === "approved" || access === "owner";
+                    return <tr key={user.id}>
+                        <td><div className="nw-person"><Avatar user={user}/><div><b>{user.name}{user.sample && <span className="nw-pill gray">Sample</span>}</b><div className="nw-small">{user.jobTitle || "Job title to be added"}</div><div className="nw-small nw-member-email">{user.email}</div></div></div></td>
+                        <td>{access === "owner" ? <span className="nw-owner-label"><Shield size={13}/>Owner · admin</span> : user.sample ? "Assignment only" : approved ? readable(user.role) : "Employee on approval"}</td>
+                        <td><span className={`nw-pill nw-access-badge ${approved ? "approved" : access === "pending_approval" ? "pending" : "gray"}`}>{accessLabels[access]}</span>{user.onboarding && <div className="nw-member-lifecycle">{memberTimestamps(user)}</div>}</td>
+                        <td className="nw-small">{user.sample ? "No login account" : user.userId ? "Account linked" : user.onboarding ? "Not accepted yet" : access === "owner" ? "Owner identity" : "Invitation needed"}</td>
+                        <td className="nw-small">{user.sample ? "Sample record" : <>{user.photoUrl && user.jobTitle ? "Complete" : !user.photoUrl && !user.jobTitle ? "Photo + title needed" : !user.photoUrl ? "Photo needed" : "Title needed"}{approved && <button className="nw-text-link" onClick={() => { go("profile"); setProfileMemberId(user.id); }}>Manage profile</button>}</>}</td>
+                        <td><div className="nw-member-actions">{isOwner && !user.sample && user.id !== "owner" && <>
+                            {access === "pending_approval" && <button className="nw-button secondary small" disabled={busy} onClick={() => setModal({ type: "approveMember", data: { id: user.id } })}>Review approval</button>}
+                            {access === "invited" && <button className="nw-button secondary small" disabled={busy} onClick={() => setModal({ type: "invitationShare", data: { id: user.id } })}><Share2 size={13}/>Copy invitation</button>}
+                            {access === "approved" && <button className="nw-button secondary small" disabled={busy} onClick={() => setModal({ type: "member", data: { id: user.id } })}><Shield size={13}/>Change role</button>}
+                            {["expired", "revoked", "not_invited"].includes(access) && <button className="nw-button secondary small" disabled={busy} onClick={() => reinviteMember(user)}><UserPlus size={13}/>Create new invitation</button>}
+                            {["invited", "pending_approval", "approved"].includes(access) && <button className="nw-text-link nw-access-revoke" disabled={busy} onClick={() => revokeMember(user)}>Revoke access</button>}
+                        </>}{access === "owner" && <span className="nw-small">Owner role protected</span>}{user.sample && <span className="nw-small">No account controls</span>}</div></td>
+                    </tr>;
+                })}</tbody></table></div>
+                <div className="nw-invitation-delivery"><Send size={17}/><div><strong>Email delivery is not configured</strong><p>Create an invitation, then copy and share its message yourself. The link contains no sign-in secret and only the invited email can accept. Private Site access must be shared separately by the Site owner.</p></div></div>
+            </section>
+        </div>;
+    };
+    const renderAdmin = () => <><div className="nw-toolbar"><div className="nw-tabs">{["Team", "Workflow", "Automations", "Settings"].map(t => <button className={adminTab === t ? "active" : ""} key={t} onClick={() => setAdminTab(t)}>{t}</button>)}</div><span className="nw-small nw-spacer">Admin access · Changes are recorded</span></div>{adminTab === "Team" ? renderTeam() : adminTab === "Workflow" ? <div className="nw-admin-grid"><section className="nw-panel"><div className="nw-panel-head"><div><h2>Board columns</h2><p>Design the stages that match how you work</p></div><button className="nw-button secondary small" onClick={() => setModal({ type: "column" })}><Plus size={13}/>Add</button></div>{state!.columns.map((c, i) => <div className="nw-settings-row" key={c.id}><span className="nw-column-color" style={{ background: c.color }}/><div>{c.name}<small>{c.isDone ? "Counts as completed" : "Counts as open"} · {activeTickets.filter(t => t.status === c.id).length} tickets</small></div><button className="nw-icon-button" style={{ marginLeft: 0, width: 25 }} disabled={i === 0 || busy} title="Move column earlier" onClick={() => { const ids = state!.columns.map(x => x.id); [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]]; void mutate("column.reorder", { ids }, "Column order saved"); }}><ChevronUp size={12}/></button><button className="nw-icon-button" style={{ marginLeft: 0, width: 25 }} disabled={i === state!.columns.length - 1 || busy} title="Move column later" onClick={() => { const ids = state!.columns.map(x => x.id); [ids[i], ids[i + 1]] = [ids[i + 1], ids[i]]; void mutate("column.reorder", { ids }, "Column order saved"); }}><ChevronDown size={12}/></button><button className="nw-icon-button" style={{ marginLeft: 0 }} title="Edit column" onClick={() => setModal({ type: "column", data: c })}><Pencil size={13}/></button></div>)}</section><section className="nw-panel"><div className="nw-panel-head"><div><h2>Custom ticket fields</h2><p>Add the details your team needs to capture</p></div><button className="nw-button secondary small" onClick={() => setModal({ type: "field" })}><Plus size={13}/>Add</button></div>{state!.customFields.map(f => <div className="nw-settings-row" key={f.id}><SlidersHorizontal size={15} color="#869582"/><div>{f.name}<small>{readable(f.type)} · {f.required ? "Required" : "Optional"}{f.options.length ? ` · ${f.options.join(", ")}` : ""}</small></div><button className="nw-icon-button" title="Edit custom field" onClick={() => setModal({ type: "field", data: f })}><Pencil size={13}/></button></div>)}{!state!.customFields.length && <Empty title="Make it your own" icon={SlidersHorizontal}><p>Add an asset ID, site, service tier or approval field.</p></Empty>}</section></div> : adminTab === "Automations" ? <section className="nw-panel"><div className="nw-panel-head"><div><h2>Workflow automations</h2><p>Match ticket creation or updates, then assign, move or alert</p></div><button className="nw-button" onClick={() => setModal({ type: "rule" })}><Plus size={15}/>New rule</button></div>{state!.rules.map(r => <div className="nw-settings-row" key={r.id}><Sparkles size={17} color="#ad8a59"/><div>{r.name}<small>When {r.trigger.replace(".", " is ")} · {r.priority === "any" ? "any priority" : `${r.priority} priority`}{r.assignToId ? ` · assign ${member(r.assignToId)?.name}` : ""}{r.moveToId ? ` · move to ${state!.columns.find(c => c.id === r.moveToId)?.name}` : ""}</small></div><span className={`nw-pill${r.enabled ? "" : " gray"}`}>{r.enabled ? "Enabled" : "Paused"}</span><button className="nw-icon-button" title="Edit rule" onClick={() => setModal({ type: "rule", data: r })}><Pencil size={13}/></button></div>)}{!state!.rules.length && <Empty title="Let routine work take care of itself" icon={Sparkles}><p>For example: assign critical tickets to the service lead and notify the response team.</p></Empty>}<div className="nw-panel-body nw-small">Rules run on saved ticket changes. They do not send external email, SMS or push notifications; alerts appear inside the workspace.</div></section> : <section className="nw-panel"><div className="nw-panel-head"><h2>Workspace settings</h2></div><form className="nw-panel-body" onSubmit={async (e) => { e.preventDefault(); const f = new FormData(e.currentTarget); await mutate("settings.update", { name: String(f.get("name")), timeZone: String(f.get("timeZone")) }, "Workspace settings saved"); }}><div className="nw-form-grid"><Field label="Workspace name"><FormText name="name" value={state!.settings.name} required/></Field><Field label="Workspace time zone"><select className="nw-select" name="timeZone" defaultValue={state!.settings.timeZone}><option value="Africa/Cairo">Cairo</option><option value="Europe/Copenhagen">Copenhagen</option><option value="Europe/Stockholm">Stockholm</option><option value="UTC">UTC</option></select></Field></div><button className="nw-button" disabled={busy}>Save settings</button><div className="nw-info-box">Employee access uses individual sign-in accounts. There is no shared administrator password in the website code. Only the workspace owner can invite people, approve employee access and change roles in the Team tab.</div></form></section>}</>;
     const renderAudit = () => { const rows: AuditEntry[] = (audit?.audit || []).filter((r: AuditEntry) => `${r.actorName} ${r.action} ${r.objectId} ${r.timestamp}`.toLowerCase().includes(auditQuery.toLowerCase())); return <><div className="nw-audit-summary"><Shield size={20}/><div><b>{audit?.chainValid ? "Audit chain verified" : auditLoading ? "Verifying the audit chain…" : "Audit verification status"}</b><div>{audit ? `${audit.total ?? audit.audit?.length ?? 0} recorded events · ${audit.chainScope || "Current exported scope"}` : "Administrator-only evidence log"}. UTC timestamps, actor identity and before/after changes are recorded on the server.</div></div></div><div className="nw-toolbar"><div className="nw-search-input"><Search size={15}/><input className="nw-input" placeholder="Filter actor, action or ticket…" value={auditQuery} onChange={e => setAuditQuery(e.target.value)} aria-label="Filter audit log"/></div><button className="nw-button secondary" onClick={() => void loadAudit()} disabled={auditLoading}><Activity size={14}/>Refresh</button><a className="nw-button secondary nw-spacer" href="/api/workspace?view=audit&format=json" target="_blank" rel="noreferrer"><Download size={14}/>Export evidence</a></div><section className="nw-panel"><div className="nw-table-wrap"><table><thead><tr><th>UTC time</th><th>Actor</th><th>Action</th><th>Object</th><th>Evidence</th><th /></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td style={{ whiteSpace: "nowrap", fontSize: 11 }}>{r.timestamp.replace("T", " ").replace("Z", " UTC")}</td><td>{r.actorName}</td><td><span className="nw-pill gray">{r.action}</span></td><td className="nw-audit-detail">{r.objectId}</td><td className="nw-audit-detail" title={r.hash}>{r.hash?.slice(0, 20)}…</td><td><button className="nw-text-link" onClick={() => setModal({ type: "auditEntry", data: r })}>Inspect</button></td></tr>)}</tbody></table></div>{!rows.length && <Empty title={auditLoading ? "Reading events…" : "No matching events"} icon={Shield}><p>Saved changes and administrative actions will appear here.</p></Empty>}</section><div className="nw-info-box">This is a tamper-evident application audit trail. It is not an independent immutable evidence vault or a claim of forensic certification. Export and retain records under your organisation’s evidence procedures.</div></>; };
     const titles: Record<View, {
         title: string;
@@ -407,6 +576,8 @@ export default function Workspace() {
     }> = { overview: { title: `Good ${now.getHours() < 12 ? "morning" : now.getHours() < 18 ? "afternoon" : "evening"}, ${me!.name.split(" ")[0]}.`, description: "A clear view of the work that matters today." }, tickets: { title: "Your work, in motion.", description: "Plan, assign and move work forward together." }, calendar: { title: "Make time for good work.", description: "Meetings, maintenance windows and delivery dates in one place." }, notes: { title: "Keep the useful details.", description: "Ideas, handovers and decisions — ready when you need them." }, chat: { title: "Stay in the conversation.", description: "Team channels and direct messages, connected to your work." }, library: { title: "Knowledge library", description: "Trusted resources for a confident team." }, profile: { title: "People behind the work.", description: "Your photograph, professional title and team contact details." }, admin: { title: "Shape your workspace.", description: "People, permissions and workflows, managed in one place." }, audit: { title: "A clear record of every change.", description: "Administrator evidence log with server timestamps and actor attribution." } };
     const renderModal = () => {
         if (!modal)
+            return null;
+        if (["member", "approveMember", "grantAdmin", "invitationShare"].includes(modal.type) && !isOwner)
             return null;
         const m = modal.data || {};
         let title = "", body: ReactNode = null, footer: ReactNode = null, wide = false;
@@ -451,10 +622,58 @@ export default function Workspace() {
             footer = <><button className="nw-button secondary" onClick={() => exportEvent(m)}><Download size={13}/>Calendar file</button><button className="nw-button" onClick={() => setModal(null)}>Done</button></>;
         }
         else if (modal.type === "member") {
-            title = m.id ? "Manage team member" : "Add a team member";
-            body = <><Field label="Name"><FormText name="name" value={m.name} required/></Field>{!m.id && <Field label="Approved sign-in email"><FormText name="email" value={m.email} type="email" required/><small>This must match the person’s sign-in account.</small></Field>}<Field label="Job title"><FormText name="jobTitle" value={m.jobTitle} required/></Field><Field label="Role"><select className="nw-select" name="role" defaultValue={m.role || "employee"}><option value="employee">Employee · team work and conversations</option><option value="manager">Manager · team work and management</option><option value="admin">Admin · users, workflow and evidence</option></select></Field>{m.id && <label className="nw-checkbox-line"><input type="checkbox" name="active" defaultChecked={m.active}/>Workspace access enabled</label>}<div className="nw-info-box">No invitation email is sent. This approves membership only. Access uses the person’s own sign-in account; the website does not store their password.</div></>;
-            onSubmit = submit(f => mutate(m.id ? "member.update" : "member.invite", { ...(m.id ? { id: m.id, active: !!f.get("active") } : { email: String(f.get("email")) }), name: String(f.get("name")), jobTitle: String(f.get("jobTitle")), role: String(f.get("role")) }, m.id ? "Member updated" : "Team membership approved"));
-            footer = save(m.id ? "Save member" : "Approve member");
+            const target = m.id ? member(m.id) : null;
+            title = m.id ? "Change member role" : "Create an employee invitation";
+            if (m.id && (!target || target.sample || target.id === "owner" || accessForMember(target, now.getTime()) !== "approved")) {
+                body = <div className="nw-info-box">Roles can only be changed for approved, active employees. The owner role and sample identities cannot be changed here.</div>;
+                footer = <button className="nw-button secondary" onClick={() => setModal(null)}>Close</button>;
+            }
+            else if (target) {
+                body = <><div className="nw-invitation-person"><Avatar user={target}/><div><strong>{target.name}</strong><span>{target.email}</span></div></div><Field label="Workspace role"><select className="nw-select" name="role" defaultValue={target.role}><option value="employee">Employee · team work and conversations</option><option value="manager">Manager · team work and team alerts</option><option value="admin">Administrator · workflow, profiles and evidence</option></select></Field><div className="nw-info-box">Only you, the workspace owner, can approve account access or change roles. An administrator can manage workspace features and inspect evidence, but cannot invite, approve, revoke or grant roles to other people.</div></>;
+                onSubmit = async e => {
+                    e.preventDefault();
+                    const role = String(new FormData(e.currentTarget).get("role"));
+                    if (role === "admin" && target.role !== "admin") { setModal({ type: "grantAdmin", data: { id: target.id } }); return; }
+                    if (await mutate("member.update", { id: target.id, role }, "Workspace role updated")) setModal(null);
+                };
+                footer = save("Save role");
+            }
+            else {
+                body = <><Field label="Person’s name"><FormText name="name" required/></Field><Field label="Sign-in email"><FormText name="email" type="email" required aria-label="Sign-in email"/><small>This email must match the person’s own sign-in account.</small></Field><Field label="Job title (optional)"><FormText name="jobTitle"/></Field><div className="nw-invitation-role"><Users size={17}/><div><strong>Employee invitation</strong><span>No workspace access until the person accepts and you approve.</span></div></div><div className="nw-info-box">The invitation is valid for seven days. Acceptance and your approval must both happen before it expires. Email delivery is not configured; copy the invitation message after creating it.</div></>;
+                onSubmit = async e => {
+                    e.preventDefault();
+                    const form = new FormData(e.currentTarget);
+                    const email = String(form.get("email")).trim().toLowerCase();
+                    if (await mutate("member.invite", { name: String(form.get("name")), email, jobTitle: String(form.get("jobTitle") || "") }, "Invitation created. Acceptance and owner approval are still required.")) {
+                        const invited = dataRef.current?.state.users.find(user => user.email.toLowerCase() === email && !user.sample);
+                        setModal(invited ? { type: "invitationShare", data: { id: invited.id } } : null);
+                    }
+                };
+                footer = save("Create invitation");
+            }
+        }
+        else if (modal.type === "approveMember") {
+            const target = member(m.id);
+            const canApprove = !!target && !target.sample && accessForMember(target, now.getTime()) === "pending_approval";
+            title = "Approve employee access";
+            body = target ? <><div className="nw-invitation-person"><Avatar user={target}/><div><strong>{target.name}</strong><span>{target.email}</span></div></div>{memberTimestamps(target)}<div className="nw-info-box">{canApprove ? "This person accepted the invitation with the matching sign-in identity. Approving now allows them to open the employee workspace with the employee role. Any administrator role must be granted separately afterward." : "This invitation is no longer awaiting approval. Refresh the team list and create a new invitation if it has expired or been revoked."}</div></> : <p>This invitation is no longer available.</p>;
+            footer = <>{cancel}<button className="nw-button" disabled={busy || !canApprove} onClick={async () => { if (target && await mutate("member.approve", { id: target.id }, "Employee access approved")) setModal(null); }}><CheckCircle2 size={15}/>Approve employee access</button></>;
+        }
+        else if (modal.type === "grantAdmin") {
+            const target = member(m.id);
+            const canGrant = !!target && !target.sample && target.id !== "owner" && accessForMember(target, now.getTime()) === "approved";
+            title = "Grant administrator privileges?";
+            body = <><div className="nw-admin-grant-warning"><Shield size={25}/><div><strong>{target?.name || "This person"} will become a workspace administrator.</strong><p>They can change workflows and settings, manage team profile details, and read or export the administrator evidence log.</p></div></div><p className="nw-modal-explanation">You remain the only person who can create invitations, approve or revoke employee access, and grant or change roles. This grant is recorded in the audit log.</p>{!canGrant && <div className="nw-alert error">This account is not eligible for a role change. Close this dialog and review its current access.</div>}</>;
+            footer = <>{cancel}<button className="nw-button" disabled={busy || !canGrant} onClick={async () => { if (target && await mutate("member.update", { id: target.id, role: "admin" }, "Administrator role granted by the owner")) setModal(null); }}><Shield size={15}/>Grant administrator role</button></>;
+        }
+        else if (modal.type === "invitationShare") {
+            const target = member(m.id);
+            const url = new URL("/workspace", window.location.origin).href;
+            const canShare = !!target && !target.sample && target.id !== "owner" && accessForMember(target, now.getTime()) === "invited";
+            const message = target ? `Hello ${target.name},\n\nThe NorthWallEg workspace owner has invited you to join the employee workspace.\n\nOpen ${url} and sign in with ${target.email}. Accept your invitation, then wait for the owner to approve access. Signing in or accepting alone does not open the workspace.\n\n${target.onboarding?.expiresAt ? `Acceptance and approval must be completed by ${invitationTime(target.onboarding.expiresAt)}.\n\n` : ""}If the private review Site is unavailable, ask the owner to share Site access with you separately.` : "";
+            title = "Share the employee invitation";
+            body = canShare ? <><div className="nw-invitation-person"><Avatar user={target}/><div><strong>{target!.name}</strong><span>{target!.email}</span></div></div><div className="nw-info-box">The invitation is saved. No email has been sent. Copy this message and share it through your chosen channel. The link contains no password or bearer token; acceptance is bound to the invited email.</div><Field label="Invitation message"><textarea className="nw-textarea nw-invitation-message" readOnly value={message} onFocus={e => e.target.select()}/></Field><button className="nw-text-link" onClick={() => void copy(url, "Workspace invitation link copied")}><Share2 size={13}/>Copy workspace link only</button></> : <div className="nw-info-box">This invitation is no longer waiting for acceptance. Review its current status in the Team tab before sharing a new invitation.</div>;
+            footer = <><button className="nw-button secondary" onClick={() => setModal(null)}>Done</button>{canShare && <button className="nw-button" onClick={() => void copy(message, "Invitation message copied — no message has been sent")}><Share2 size={15}/>Copy invitation message</button>}</>;
         }
         else if (modal.type === "column") {
             title = m.id ? "Edit workflow column" : "Add workflow column";
@@ -531,8 +750,10 @@ export default function Workspace() {
         else if (modal.type === "confirm") {
             title = m.title;
             body = <p style={{ fontSize: 14, lineHeight: 1.8, color: "#788c75" }}>{m.description}</p>;
-            footer = <>{cancel}<button className="nw-button danger" disabled={busy} onClick={async () => { if (await mutate(m.action, m.payload, "Change saved"))
-                setModal(null); }}>Confirm</button></>;
+            footer = <>{cancel}<button className="nw-button danger" disabled={busy} onClick={async () => { if (await mutate(m.action, m.payload, m.success || "Change saved")) {
+                if (m.action === "member.reinvite") setModal({ type: "invitationShare", data: { id: m.payload.id } });
+                else setModal(null);
+            } }}>{m.label || "Confirm"}</button></>;
         }
         else if (modal.type === "copy") {
             title = "Copy this text";
@@ -547,7 +768,7 @@ export default function Workspace() {
         setView("tickets"); }} placeholder={view === "library" ? "Search knowledge" : view === "notes" ? "Search notes" : view === "chat" ? "Search conversation" : view === "calendar" ? "Search events" : "Search tickets"}/><kbd>⌘ K</kbd></div><div className="nw-top-right"><div className="nw-clock"><strong>{now.toLocaleDateString("en-GB", { timeZone: state!.settings.timeZone, weekday: "short", day: "numeric", month: "short" })}</strong><br />{now.toLocaleTimeString("en-GB", { timeZone: state!.settings.timeZone, hour: "2-digit", minute: "2-digit" })} {state!.settings.timeZone.split("/").pop()?.replaceAll("_", " ")} · {now.toLocaleTimeString("en-GB", { timeZone: "Europe/Copenhagen", hour: "2-digit", minute: "2-digit" })} CPH</div><span className="nw-separator"/><button className="nw-icon-button" aria-label={`Notifications, ${unread} unread`} onClick={() => setShowNotifications(!showNotifications)}><Bell size={19}/>{unread > 0 && <span className="nw-badge-dot"/>}</button><button className="nw-button" disabled={!state!.columns.length} onClick={() => setModal({ type: "ticket" })}><Plus size={16}/>Create ticket</button><button className="nw-profile-trigger" aria-label="Open my profile" onClick={() => go("profile")}><Avatar user={me}/></button></div>{showNotifications && <div className="nw-notification-popover"><div className="nw-panel-head"><h3>Notifications <span className="nw-small">{unread} unread</span></h3><button className="nw-text-link" onClick={() => void mutate("notification.readAll", {}, "Notifications marked as read")}>Read all</button></div><div className="nw-notification-list">{notifications.length ? notifications.slice().reverse().map(n => <button className={`nw-notification${!n.read ? " unread" : ""}`} key={n.id} onClick={() => { void mutate("notification.read", { id: n.id }, ""); if (n.objectId && state!.tickets.some(t => t.id === n.objectId)) {
         showTicket(n.objectId);
         setShowNotifications(false);
-    } }}><Bell size={16} style={{ marginTop: 3, color: n.kind === "urgent" ? "#bb593d" : "#82947e" }}/><div><strong>{n.title}</strong><p style={{ fontSize: 12, color: "#798b72", margin: "3px 0" }}>{n.body}</p><small>{fullDate(n.createdAt)}</small></div></button>) : <Empty title="Nothing new yet" icon={Bell}/>}</div>{(isAdmin || me!.role === "manager") && <div className="nw-panel-body"><button className="nw-button secondary small" onClick={() => { setModal({ type: "alert" }); setShowNotifications(false); }}><Send size={12}/>Send a team alert</button></div>}</div>}</header><div className={`nw-news-strip${newsPaused ? " paused" : ""}`}><button className="nw-news-label" onClick={() => setModal({ type: "news" })}><Activity size={13}/>{news?.status === "cached" ? "News · cached" : "IT & cyber news"}</button><div className="nw-news-viewport">{news?.items?.length ? <div className="nw-news-track">{[0, 1].map(loop => <div className="nw-news-track-group" key={loop} aria-hidden={loop === 1}>{tickerHeadlines(news.items).map(item => <a key={item.id} href={item.url} target="_blank" rel="noreferrer" tabIndex={loop === 1 ? -1 : 0}><b>{item.source}</b><span>{item.title}</span><time>{shortDate(item.publishedAt)}</time></a>)}</div>)}</div> : <span className="nw-news-unavailable">{news ? "Publisher feeds are temporarily unavailable" : "Checking English publisher feeds…"}</span>}</div>{news?.status === "cached" && <span className="nw-news-cache-status" title={`Cached publisher headlines${news.fetchedAt ? ` · retrieved ${fullDate(news.fetchedAt)}` : " · retrieval time unavailable"} · refresh unavailable`}>{news.fetchedAt ? `Retrieved ${shortDate(news.fetchedAt)}` : "Retrieval time unavailable"} · refresh unavailable</span>}<button className="nw-news-control" onClick={() => setNewsPaused(!newsPaused)} aria-label={newsPaused ? "Resume news ticker" : "Pause news ticker"}>{newsPaused ? "Resume" : "Pause"}</button><button className="nw-news-control" onClick={() => setModal({ type: "news" })}>All news</button></div><div className="nw-content"><div className="nw-breadcrumb"><span>{state!.settings.name}</span><ChevronRight size={11}/><span>{NAV.find(n => n.id === view)?.label || readable(view)}</span></div><div className="nw-page-head"><div><h1>{titles[view].title}</h1><p>{titles[view].description}</p></div><span className="nw-demo-label">Review demo · {state!.settings.demo ? "sample data" : "team workspace"}</span></div>{error && !modal && <div className="nw-alert error"><Flag size={16}/><span style={{ flex: 1 }}>{error}</span><button className="nw-icon-button" aria-label="Dismiss error" onClick={() => setError("")}><X size={14}/></button></div>}{!data.needsSetup && view === "overview" && (!me!.photoUrl || !me!.jobTitle) && <div className="nw-profile-nudge"><Users size={20}/><div><strong>Put a face to your work</strong><p>Add your photograph and job title to complete your team profile.</p></div><button className="nw-button secondary small" onClick={() => go("profile")}>Complete my profile</button></div>}{data.needsSetup ? <section className="nw-panel"><Empty title="Your workspace is ready to take shape" icon={Sparkles}><p>Load the review workspace with clearly labelled sample tickets, teammates, calendar events and conversations.</p><button className="nw-button" disabled={busy} onClick={() => void mutate("demo.initialize", {}, "Sample workspace ready")}><Plus size={15}/>Load sample workspace</button></Empty></section> : view === "overview" ? renderOverview() : view === "tickets" ? renderTickets() : view === "calendar" ? renderCalendar() : view === "notes" ? renderNotes() : view === "chat" ? renderChat() : view === "library" ? renderLibrary() : view === "profile" ? <EmployeeProfile key={isAdmin && profileMemberId ? profileMemberId : me!.id} user={isAdmin && profileMemberId ? member(profileMemberId) || me! : me!} viewer={me!} users={users} revision={data.revision} onSaved={accept} onEditMember={id => { setProfileMemberId(id); setView("profile"); }}/> : view === "admin" && isAdmin ? renderAdmin() : view === "audit" && isAdmin ? renderAudit() : null}</div></main>{ticket && <div className="nw-drawer-backdrop" onClick={e => { if (e.target === e.currentTarget)
+    } }}><Bell size={16} style={{ marginTop: 3, color: n.kind === "urgent" ? "#bb593d" : "#82947e" }}/><div><strong>{n.title}</strong><p style={{ fontSize: 12, color: "#798b72", margin: "3px 0" }}>{n.body}</p><small>{fullDate(n.createdAt)}</small></div></button>) : <Empty title="Nothing new yet" icon={Bell}/>}</div>{(isAdmin || me!.role === "manager") && <div className="nw-panel-body"><button className="nw-button secondary small" onClick={() => { setModal({ type: "alert" }); setShowNotifications(false); }}><Send size={12}/>Send a team alert</button></div>}</div>}</header><div className={`nw-news-strip${newsPaused ? " paused" : ""}`}><button className="nw-news-label" onClick={() => setModal({ type: "news" })}><Activity size={13}/>{news?.status === "cached" ? "News · cached" : "IT & cyber news"}</button><div className="nw-news-viewport">{news?.items?.length ? <div className="nw-news-track">{[0, 1].map(loop => <div className="nw-news-track-group" key={loop} aria-hidden={loop === 1}>{tickerHeadlines(news.items).map(item => <a key={item.id} href={item.url} target="_blank" rel="noreferrer" tabIndex={loop === 1 ? -1 : 0}><b>{item.source}</b><span>{item.title}</span><time>{shortDate(item.publishedAt)}</time></a>)}</div>)}</div> : <span className="nw-news-unavailable">{news ? "Publisher feeds are temporarily unavailable" : "Checking English publisher feeds…"}</span>}</div>{news?.status === "cached" && <span className="nw-news-cache-status" title={`Cached publisher headlines${news.fetchedAt ? ` · retrieved ${fullDate(news.fetchedAt)}` : " · retrieval time unavailable"} · refresh unavailable`}>{news.fetchedAt ? `Retrieved ${shortDate(news.fetchedAt)}` : "Retrieval time unavailable"} · refresh unavailable</span>}<button className="nw-news-control" onClick={() => setNewsPaused(!newsPaused)} aria-label={newsPaused ? "Resume news ticker" : "Pause news ticker"}>{newsPaused ? "Resume" : "Pause"}</button><button className="nw-news-control" onClick={() => setModal({ type: "news" })}>All news</button></div><div className="nw-content"><div className="nw-breadcrumb"><span>{state!.settings.name}</span><ChevronRight size={11}/><span>{NAV.find(n => n.id === view)?.label || readable(view)}</span></div><div className="nw-page-head"><div><h1>{titles[view].title}</h1><p>{titles[view].description}</p></div><span className="nw-demo-label">Review demo · {state!.settings.demo ? "sample data" : "team workspace"}</span></div>{error && !modal && <div className="nw-alert error"><Flag size={16}/><span style={{ flex: 1 }}>{error}</span><button className="nw-icon-button" aria-label="Dismiss error" onClick={() => setError("")}><X size={14}/></button></div>}{!data.needsSetup && view === "overview" && (!me!.photoUrl || !me!.jobTitle) && <div className="nw-profile-nudge"><Users size={20}/><div><strong>Put a face to your work</strong><p>Add your photograph and job title to complete your team profile.</p></div><button className="nw-button secondary small" onClick={() => go("profile")}>Complete my profile</button></div>}{data.needsSetup ? <section className="nw-panel"><Empty title="Your workspace is ready to take shape" icon={Sparkles}><p>Start with a clean workspace for your team, or explore the features with clearly labelled sample records.</p><div className="nw-flex" style={{justifyContent:"center",flexWrap:"wrap",gap:12}}><button className="nw-button" disabled={busy} onClick={() => void mutate("workspace.initialize", {}, "Your workspace is ready")}><Plus size={15}/>Start empty workspace</button><button className="nw-button secondary" disabled={busy} onClick={() => void mutate("demo.initialize", {}, "Sample workspace ready")}><Sparkles size={15}/>Load sample workspace</button></div></Empty></section> : view === "overview" ? renderOverview() : view === "tickets" ? renderTickets() : view === "calendar" ? renderCalendar() : view === "notes" ? renderNotes() : view === "chat" ? renderChat() : view === "library" ? renderLibrary() : view === "profile" ? <EmployeeProfile key={profileTarget!.id} user={profileTarget!} viewer={me!} users={profileUsers} revision={data.revision} onSaved={accept} onEditMember={id => { if (profileUsers.some(u => u.id === id)) { setProfileMemberId(id); setView("profile"); } }}/> : view === "admin" && isAdmin ? renderAdmin() : view === "audit" && isAdmin ? renderAudit() : null}</div></main>{ticket && <div className="nw-drawer-backdrop" onClick={e => { if (e.target === e.currentTarget)
         setSelectedTicket(null); }}><aside className="nw-drawer" role="dialog" aria-modal="true" aria-label={ticket.title}><div className="nw-drawer-head"><ClipboardList size={16} color="#899b85"/><small>{ticket.key}</small>{ticket.sample && <span className="nw-pill gray">Sample</span>}<button className="nw-icon-button" title="Copy ticket link" onClick={() => void copy(`${window.location.origin}/workspace?ticket=${encodeURIComponent(ticket.id)}`, "Ticket link copied")}><Share2 size={16}/></button><button className="nw-icon-button" title="Edit ticket" onClick={() => setModal({ type: "ticket", data: ticket })}><Pencil size={16}/></button><button className="nw-icon-button" title={ticket.archived ? "Restore ticket" : "Archive ticket"} onClick={async () => { if (await mutate("ticket.archive", { id: ticket.id, archived: !ticket.archived }, ticket.archived ? "Ticket restored" : "Ticket archived"))
         setSelectedTicket(null); }}><Archive size={16}/></button><button className="nw-icon-button" aria-label="Close ticket" onClick={() => setSelectedTicket(null)}><X size={20}/></button></div><div className="nw-drawer-body"><h2 className="nw-drawer-title">{ticket.title}</h2><div className="nw-button-row"><select className="nw-select" aria-label="Ticket status" value={ticket.status} disabled={busy} onChange={e => void mutate("ticket.update", { id: ticket.id, status: e.target.value }, "Status updated")}>{state!.columns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><PriorityBadge priority={ticket.priority}/>{ticket.archived && <span className="nw-pill gray">Archived</span>}</div><div className="nw-details-grid"><div className="nw-detail"><span>Assignee</span><span className="nw-person"><Avatar user={member(ticket.assigneeId)} small/>{member(ticket.assigneeId)?.name || "Unassigned"}</span></div><div className="nw-detail"><span>Due date</span>{shortDate(ticket.dueDate)}</div><div className="nw-detail"><span>Customer</span>{ticket.customer || "Internal"}</div><div className="nw-detail"><span>Location</span>{ticket.location || "—"}</div><div className="nw-detail"><span>Created</span>{fullDate(ticket.createdAt)}</div><div className="nw-detail"><span>Reporter</span>{member(ticket.reporterId)?.name || "Team"}</div><div className="nw-detail"><span>Updated</span>{fullDate(ticket.updatedAt)}</div></div><p className="nw-description">{ticket.description || "No description added yet."}</p><div className="nw-ticket-tags">{ticket.tags.map(t => <span key={t}>{t}</span>)}</div>{state!.customFields.length > 0 && <div style={{ marginTop: 18 }}>{state!.customFields.map(f => <div className="nw-custom-value" key={f.id}><b>{f.name}:</b> {String(ticket.customFields[f.id] ?? "—")}</div>)}</div>}<h3 className="nw-section-title"><CheckCheck size={16}/>Checklist <span className="nw-small">{ticket.checklist.filter(c => c.done).length}/{ticket.checklist.length}</span></h3>{ticket.checklist.map(c => <label className={`nw-checklist-item${c.done ? " done" : ""}`} key={c.id}><input type="checkbox" checked={c.done} disabled={busy} onChange={() => void mutate("ticket.update", { id: ticket.id, checklist: ticket.checklist.map(x => x.id === c.id ? { ...x, done: !x.done } : x) }, "Checklist updated")}/><span>{c.text}</span><button className="nw-icon-button" style={{ marginLeft: "auto", width: 24, height: 24 }} title="Remove checklist item" onClick={() => void mutate("ticket.update", { id: ticket.id, checklist: ticket.checklist.filter(x => x.id !== c.id) }, "Checklist item removed")}><X size={12}/></button></label>)}<form className="nw-inline-form" onSubmit={async (e) => { e.preventDefault(); const f = e.currentTarget; const fd = new FormData(f); const text = String(fd.get("text") || "").trim(); if (text && await mutate("ticket.update", { id: ticket.id, checklist: [...ticket.checklist, { id: crypto.randomUUID(), text, done: false }] }, "Checklist item added"))
         f.reset(); }}><input className="nw-input" name="text" placeholder="Add a checklist item…" maxLength={400} required/><button className="nw-button secondary small" disabled={busy}><Plus size={14}/>Add</button></form><h3 className="nw-section-title"><MessageCircle size={16}/>Conversation <span className="nw-small">{state!.comments.filter(c => c.ticketId === ticket.id && !c.deleted).length}</span></h3>{state!.comments.filter(c => c.ticketId === ticket.id && !c.deleted).map(c => { const original = state!.comments.find(x => x.id === c.replyToId); return <article className="nw-comment" key={c.id}><Avatar user={member(c.authorId)} small/><div className="nw-comment-content"><div className="nw-comment-header"><b>{member(c.authorId)?.name || "Team member"}</b><time>{fullDate(c.createdAt)}</time></div>{c.forwardedFromId && <span className="nw-message-edited">Forwarded</span>}{original && <div className="nw-quote"><strong>{member(original.authorId)?.name}</strong>{original.body.slice(0, 150)}</div>}<div className="nw-comment-text">{messageBody(c.body)}</div>{c.updatedAt !== c.createdAt && <span className="nw-message-edited">Edited</span>}<div className="nw-comment-actions"><ReactionButtons item={c} kind="comment"/><button onClick={() => setModal({ type: "commentReply", data: c })}>Reply</button><button onClick={() => setModal({ type: "reaction", data: { item: c, kind: "comment" } })}>React</button><button onClick={() => setModal({ type: "forward", data: { item: c, kind: "comment" } })}>Forward</button><button onClick={() => void copy(c.body, "Comment copied")}>Copy</button>{c.authorId === me!.id && <button onClick={() => setModal({ type: "editText", data: { item: c, kind: "comment" } })}>Edit</button>}{(c.authorId === me!.id || isAdmin) && <button onClick={() => confirm("Delete comment?", "The comment will be removed. The action remains in the audit trail.", "comment.delete", { id: c.id })}>Delete</button>}</div></div></article>; })}<Composer users={users} busy={busy} placeholder="Add a comment, or @mention someone…" onSend={async (body, mentions) => mutate("comment.add", { ticketId: ticket.id, body, mentions }, "Comment added")}/></div></aside></div>}{modal?.type === "commentReply" ? <div className="nw-modal-backdrop"><div className="nw-modal"><div className="nw-modal-head"><h2>Reply to {member(modal.data.authorId)?.name}</h2><button className="nw-icon-button" aria-label="Close reply" onClick={() => setModal(null)}><X size={18}/></button></div><div className="nw-modal-body"><div className="nw-quote"><strong>{member(modal.data.authorId)?.name}</strong>{modal.data.body}</div>{error && <div className="nw-alert error">{error}</div>}<Composer users={users} busy={busy} placeholder="Write a reply…" onSend={async (body, mentions) => { const ok = await mutate("comment.add", { ticketId: modal.data.ticketId, replyToId: modal.data.id, body, mentions }, "Reply added"); if (ok)

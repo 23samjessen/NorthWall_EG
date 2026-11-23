@@ -5,6 +5,7 @@ import InsightsShell from '@/components/insights-shell';
 import { insightGuides } from '@/lib/insights-content';
 import { services } from '@/lib/marketing-content';
 import { absoluteUrl, jsonLd, openGraphBase, publicRobots } from '@/lib/seo';
+import { scriptNonce } from '@/lib/script-nonce';
 
 type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -13,11 +14,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: guide.title, description: guide.summary, robots: publicRobots, alternates: { canonical: absoluteUrl(`/insights/${guide.slug}`) }, openGraph: { ...openGraphBase, type: 'article', title: guide.title, description: guide.summary, url: absoluteUrl(`/insights/${guide.slug}`) } };
 }
 export default async function InsightGuidePage({ params }: Props) {
+  const nonce = await scriptNonce();
   const { slug } = await params; const guide = insightGuides.find(item => item.slug === slug); if (!guide) notFound();
   const related = services.filter(service => guide.serviceIds.includes(service.id));
   const schema = { '@context': 'https://schema.org', '@type': 'Article', headline: guide.title, description: guide.summary, inLanguage: 'en', articleSection: guide.category, dateModified: guide.updatedAt, mainEntityOfPage: absoluteUrl(`/insights/${guide.slug}`), author: { '@type': 'Organization', name: 'NorthWallEg', url: absoluteUrl('/') }, publisher: { '@id': absoluteUrl('/#organization') } };
   const breadcrumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'NorthWallEg', item: absoluteUrl('/') }, { '@type': 'ListItem', position: 2, name: 'Security insights', item: absoluteUrl('/insights') }, { '@type': 'ListItem', position: 3, name: guide.title, item: absoluteUrl(`/insights/${guide.slug}`) }] };
-  return <InsightsShell><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd([schema, breadcrumbs]) }}/><div className="nw-insights-container nw-guide-layout">
+  return <InsightsShell><script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd([schema, breadcrumbs]) }}/><div className="nw-insights-container nw-guide-layout">
     <article className="nw-guide-article"><nav className="nw-guide-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><a href="/insights">Security insights</a></nav><span className="nw-insights-eyebrow">{guide.category}</span><h1>{guide.title}</h1><p className="nw-guide-intro">{guide.intro}</p><div className="nw-guide-meta"><span><BookOpen size={16}/>{guide.readingMinutes} minute read</span><span>NorthWallEg · Updated <time dateTime={guide.updatedAt}>{new Date(`${guide.updatedAt}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</time></span></div>
       <nav className="nw-guide-contents" aria-label="In this guide"><strong>In this guide</strong>{guide.sections.map((section, index) => <a href={`#section-${index + 1}`} key={section.heading}>{section.heading}</a>)}</nav>
       {guide.sections.map((section, index) => <section id={`section-${index + 1}`} className="nw-guide-section" key={section.heading}><h2>{section.heading}</h2>{section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}{!!section.checklist?.length && <ul>{section.checklist.map(point => <li key={point}>{point}</li>)}</ul>}{!!section.sourceIds?.length && <p className="nw-guide-citations">Official references: {section.sourceIds.map(id => { const number = guide.sources.findIndex(source => source.id === id) + 1; return number > 0 ? <a key={id} href={`#reference-${number}`}>[{number}]</a> : null; })}</p>}</section>)}

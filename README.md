@@ -6,11 +6,13 @@ This is the approved NorthWallEg website and employee-workspace source for **23s
 
 **GitHub source:** https://github.com/23samjessen/NorthWall_EG
 
+**Hostinger destination:** `northwallegy.com`, including the full employee workspace. This repository now includes a standard Next.js Node variant with MySQL/private-photo storage and password + email-code sign-in. Its build and local security checks pass; account configuration, real email delivery, data transfer and live Hostinger deployment remain to be completed. Start with [UPLOAD_TO_HOSTINGER_FIRST.md](UPLOAD_TO_HOSTINGER_FIRST.md) and [the complete hosting guide](docs/HOSTINGER_AND_DOMAIN.md). The source ZIP belongs in Node.js web-app deployment, not a PHP/HTML `public_html` upload.
+
 The full application lives in this repository's root. This clean repository contains the current app and its verification workflow; it has no legacy website subtree or GitHub Pages publication workflow. The original website is maintained separately in **23samjessen/NorthWall**. The new app runs on Worker/D1 hosting at the link above.
 
 **The hosted site remains private for review. Publish it only after company registration and the owner's launch instruction.** A public source repository does not open the private site or its employee data.
 
-Pushing to GitHub saves source changes. It does **not** automatically update the hosted app, and edits are not automatically synchronised in both directions. See [docs/GITHUB_AND_DEPLOYMENT.md](docs/GITHUB_AND_DEPLOYMENT.md) for the exact distinction and Git commands.
+Pushing to GitHub saves source changes. It does **not** update the existing private Sites deployment. If you connect this repository to Hostinger and enable Git deployment, pushes can trigger that separately configured Node deployment; edits are not automatically synchronised in both directions. See [docs/GITHUB_AND_DEPLOYMENT.md](docs/GITHUB_AND_DEPLOYMENT.md) for the exact distinction and Git commands.
 
 ## Start here
 
@@ -19,11 +21,14 @@ Pushing to GitHub saves source changes. It does **not** automatically update the
 | Everyday maintenance, company details, people, photos, users and launch | [MAINTENANCE_MANUAL.md](MAINTENANCE_MANUAL.md) |
 | Exact public company JSON fields and examples | [docs/COMPANY_CONTENT.md](docs/COMPANY_CONTENT.md) |
 | Clone, update and push this repository; understand deployment | [docs/GITHUB_AND_DEPLOYMENT.md](docs/GITHUB_AND_DEPLOYMENT.md) |
-| Hostinger domain, hosting choices and future launch checklist | [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) |
+| Hostinger Node upload, database, email verification, HTTPS and launch | [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) |
 | Eight-step review of the design and functions | [docs/REVIEW_GUIDE.md](docs/REVIEW_GUIDE.md) |
 | Commands, users, colours, images, fields and code locations | [docs/CUSTOMISATION.md](docs/CUSTOMISATION.md) |
+| Owner invitation and approval guide | [docs/USER_ACCESS.md](docs/USER_ACCESS.md) |
+| Passwords, email verification and owner recovery | [docs/AUTHENTICATION_AND_MFA.md](docs/AUTHENTICATION_AND_MFA.md) |
 | Employee workspace guide | [docs/WORKSPACE.md](docs/WORKSPACE.md) |
 | Identity, permissions, database, audit and API details | [docs/BACKEND.md](docs/BACKEND.md) |
+| Security fixes, test evidence and remaining launch requirements | [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md) |
 | SEO decisions and public-launch configuration | [docs/SEO.md](docs/SEO.md) |
 | News publishers, refresh behaviour and topic filters | [docs/NEWS.md](docs/NEWS.md) |
 | Search intent, useful content and search-launch plan | [docs/SEO_AND_CONTENT_PLAN.md](docs/SEO_AND_CONTENT_PLAN.md) |
@@ -67,13 +72,15 @@ The administrator starts the labelled sample workspace once. Sample colleagues a
 
 ## Sign-in and passwords
 
-There is no shared NorthWallEg demo password. The hosted site uses the owner's approved sign-in identity; the backend then checks active employee membership. Initial administrator setup is controlled by `ADMIN_EMAILS`. After setup, add or edit colleagues in **Admin settings → Team**.
+**Requested Hostinger login:** password plus a one-time verification code, email by default or SMS to a verified phone after a delivery provider is configured. This is a destination requirement, **not an enabled feature in this revision**. See [Authentication and MFA](docs/AUTHENTICATION_AND_MFA.md) for the exact flow and security limits.
+
+There is no shared NorthWallEg demo password. The hosted site uses the owner's approved sign-in identity; the backend then checks active employee membership. Initial administrator setup is controlled by `ADMIN_EMAILS`. After setup, only the owner can invite colleagues in **Admin settings → Team**. They must accept their invitation and receive a separate owner approval before access; the owner can later grant admin roles. See [User access](docs/USER_ACCESS.md).
 
 The earlier browser-only prototype's sample username/password does not apply. Change the real sign-in password in the identity provider's own account settings. This repository contains no passwords, password hashes or production API keys.
 
 Adding a member does not send email and does not change the private site's audience. Both site access and employee membership must be granted before a colleague can enter.
 
-Public team cards do not create employee accounts. No sign-in email has been supplied for Pernille, so her public profile is not an invitation or an administrator account. Each employee edits their own profile; administrators manage access separately.
+Public team cards do not create employee accounts. No sign-in email has been supplied for Pernille, so her public profile is not an invitation or an administrator account. Each employee edits their own profile; only the owner manages account invitations, approvals and roles.
 
 ## Quick commands
 
@@ -107,6 +114,8 @@ Useful checks:
 npx tsc --noEmit
 node scripts/test-workspace.mjs
 npm run test:news
+npm run test:security
+npm run audit:dependencies
 npm run build
 ```
 
@@ -158,3 +167,15 @@ ISO entries are summaries and official catalogue links. Licensed standards are n
 The hosted review site remains private and intentionally `noindex`. The design has been approved; company registration, the final domain and a launch instruction are still required before opening the marketing website. Keep employee access protected after launch. SEO foundations cannot guarantee a first-place Google ranking.
 
 A different hosting provider requires a verified authentication integration. The current backend trusts only identity headers inserted by the supported hosting gateway. See `docs/BACKEND.md` before moving the app to another server.
+
+## Hostinger command reference
+
+```bash
+npm ci
+npm run hostinger:setup
+npm run hostinger:check -- --smtp
+npm run build:hostinger
+npm run start:hostinger
+```
+
+Setup requires private environment settings and a private terminal for the hidden owner-password prompt. Do not run setup against an unrelated database. The default owner username is **23samjessen@gmail.com**; no actual credential is shipped. `PUBLIC_LAUNCH=false` keeps the destination behind sign-in until the owner decides to launch. See the hosting guide before using these commands.

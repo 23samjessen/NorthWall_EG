@@ -22,7 +22,7 @@ Keep the hosted site private until company registration and your instruction to 
 | Change website colours, spacing or layout | `app/globals.css` and `components/marketing.tsx` |
 | Change the NW mark or wordmark | `components/brand.tsx`; update related SVG assets too |
 | Update my employee name, title, professional details or photo | **My profile** in the workspace |
-| Approve an employee, change their role or disable access | **Admin settings → Team** |
+| Invite/approve an employee, change their role or revoke access | Owner: **Admin settings → Team** |
 | Add ticket stages or extra ticket fields | **Admin settings → Workflow** |
 | Add assignment/movement/notification rules | **Admin settings → Automations** |
 | Change the team name or reference clock timezone | **Admin settings → Settings** |
@@ -148,33 +148,34 @@ The photo limit is **2 MiB (2,097,152 bytes)**, displayed as 2 MB in the interfa
 
 Use **Choose replacement** to replace the single current image. **Remove photograph** asks for confirmation and returns the avatar to initials. Save pending text details before changing the photograph.
 
-The completion indicator counts a title and a photograph: `0/2`, `1/2` or `2/2`. The demo reminds people to finish their profiles while allowing them to continue working. It does not introduce a blocking onboarding gate. A job title is descriptive text; it never grants a role.
+The completion indicator counts a title and a photograph: `0/2`, `1/2` or `2/2`. The demo reminds people to finish their profiles while allowing them to continue working. Profile completion is a reminder after account approval; it does not replace or bypass the owner-controlled account approval gate. A job title is descriptive text; it never grants a role.
 
 The optional biography has a 600-character limit. Display name/title allow 120 characters, department 80, work phone 40 and location 120. These are professional details visible within the active team workspace.
 
 If another person saves while your form is open, a revision conflict can occur. **Reload saved details** loads the current record and discards unsaved typed text. Review it, re-enter the intended change and save again.
 
-### Administrators: approve and manage employees
+### Owner: invite, approve and manage employees
 
-1. Open **Admin settings → Team → Add member**.
-2. Enter the person's actual sign-in email, display name, job title and appropriate role.
-3. Select **Approve member**.
-4. Separately grant access to the private hosted site if that person is not already in its permitted audience.
-5. Have the person sign in with the approved account and open the workspace.
+1. Open **Admin settings → Team → Create invitation** as the owner.
+2. Enter the colleague's real sign-in email, display name and job title. The invitation starts inactive with employee permissions.
+3. Copy and share the invitation instructions through your chosen channel. The current app does not deliver invitation emails or SMS. Separately grant private Site audience access when you choose to admit the person to the review Site.
+4. The person signs in with the exact invited account and accepts the invitation. They can see only their own onboarding status.
+5. Review **Awaiting approval** in Team and explicitly approve them. Only then can they enter the employee workspace.
+6. If needed, separately grant manager or administrator access to an approved member. No invitation grants administration automatically.
 
-This creates a membership record; it does not send an invitation email. The account shows **Pending account link** until its stable hosting identity is bound on its first successful workspace write. Sample `.invalid` accounts are examples and cannot sign in.
+Both acceptance and owner approval must occur before the seven-day expiry. Reissuing creates a new invitation, clears acceptance/approval and stops old requests from accepting the new invitation. Revocation removes access on subsequent protected requests while retaining history.
 
-The team table shows the person's image/title and **Complete**, **Photo needed**, **Title needed** or **Photo + title needed**. Choose **Manage profile** to edit their details or replace/remove their photo. Use **Edit member** for the account role and access status. Employees can manage only their own profiles; administrators can manage other members.
+Only the owner can manage invitations and account permissions. Other approved administrators can manage workspace settings, safe profiles and audit evidence. The owner cannot be disabled or demoted through these controls. Legacy non-owner records without approval evidence need a new invitation; sample colleagues cannot become working accounts. See [USER_ACCESS.md](docs/USER_ACCESS.md).
 
-The backend prevents self-lockout and protects the last active real administrator. Have another active administrator make changes to an administrator's own access. Disabling a member removes their access on subsequent protected requests; it does not delete the history of their work.
+The team view also shows profile images, titles and completion. Safe profile changes do not change account permission. A person's title is descriptive, not an administrator role.
 
 ### Passwords and account identity
 
-There is no shared NorthWallEg password and no password database in this source. The hosted sign-in provider owns passwords and account recovery. Change those details in the provider's account settings.
+The private review Site continues to use its hosting provider for passwords and recovery. The separate Hostinger variant stores salted scrypt password verifiers in MySQL and uses email-code verification. Provision the owner through `npm run hostinger:setup` using its hidden terminal prompt; a temporary password expires after 24 hours and must be replaced after email verification. A signed-in Hostinger user can open `/sign-in` to change a password. Explicit owner recovery uses `npm run hostinger:setup -- --recover-owner` and revokes sessions. Do not edit hashes by hand or put passwords in source. No actual owner credential has been configured remotely.
 
 `ADMIN_EMAILS` is a server runtime allowlist for **initial setup of an empty workspace**. It does not promote people in an existing workspace. The local example uses `seedy@sites.test` for the loopback-only development simulator; production uses verified hosting identity. Earlier static-prototype credentials do not apply.
 
-The profile form cannot change a member's sign-in email, identity binding or access role. A change of sign-in account needs a deliberate membership change by an administrator, preserving the person's work and the remaining administrator's access. Do not change identity by editing browser data.
+The profile form cannot change a member's sign-in email, identity binding or access role. A change of sign-in account needs a deliberate owner-controlled invitation/enrollment process, preserving historical work and the owner's access. Do not change identity by editing browser data.
 
 ### Where private photos are stored
 
@@ -293,7 +294,7 @@ npm run dev
 
 Open the URL printed in the terminal. Keep the local preview bound to your own computer; it uses a development identity that is not production sign-in. Press **Ctrl+C** to stop it. To request another port, use `npm run dev -- --port 5174`.
 
-For a built local preview, run `npm run build` followed by `npm start`. This does not publish anything and does not supply the portable development sign-in simulator.
+For a built local preview, run `npm run build` followed by `npm run preview:worker`. This does not publish anything and does not supply the portable development sign-in simulator. For Hostinger, use `npm run build:hostinger` and `npm run start:hostinger` with the private configuration in `hostinger/.env.example`. Ordinary `npm start` selects that server only when `NORTHWALL_RUNTIME=hostinger`; otherwise the guard refuses to expose the Worker gateway contract.
 
 Before releasing a code change:
 
@@ -301,6 +302,8 @@ Before releasing a code change:
 npx tsc --noEmit
 npm run test:backend
 npm run test:news
+npm run test:security
+npm run audit:dependencies
 npm run build
 ```
 
@@ -362,14 +365,14 @@ Successful mutations are recorded; this is not a log of every read or every plat
 Keep the private review audience and no-index policy while preparing. The sequence is:
 
 1. Confirm company registration, approve public company/contact/team details, and populate only the real registration fields you want shown.
-2. Purchase the chosen domain and confirm the exact canonical hostname.
-3. Prefer connecting the Hostinger-bought domain to the existing application host. Request the real custom-domain records from that host and add those exact values at the authoritative DNS provider.
-4. Verify ownership, HTTPS and intended root/`www` redirects while review access stays private.
+2. The purchased domain is **northwallegy.com**. Confirm the Hostinger application-hosting plan from **Websites**; the Domain Overview screen alone does not identify a hosting plan.
+3. Prepare the full Hostinger application: production Node entry point, transactional database, protected photo storage, verified sign-in/session handling, secrets and data transfer. Preserve the existing design and workspace features. Keep the existing private deployment available until the destination is verified.
+4. Test the Hostinger installation on a protected temporary address. Then attach the domain using Hostinger's actual deployment records, verify HTTPS and intended root/`www` redirects, and test rollback. The previously prepared external-host records are not the destination for this migration.
 5. Update `website.origin` in `lib/company-profile.json`, then review the demo flag, public metadata, sitemap and robots rules together. `website.isReviewDemo` alone does not publish the site or connect DNS.
 6. Check sign-in, employee membership, protected photos/library, ticket writes and evidence behavior on the final hostname. Check the public contact links and responsive layouts.
 7. After your launch instruction, open the intended marketing audience and enable appropriate public indexing. Keep employee routes protected and out of public search.
 
-Follow [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) for current hosting choices and DNS instructions. The app's Worker, D1 and trusted gateway dependencies mean the current ZIP is not a drop-in Hostinger Node deployment. A domain connection does not require moving compute.
+Follow [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) for the full Hostinger migration. The source ZIP now includes the Node application and setup tools. Hostinger database/mailbox settings, schema/owner provisioning, live email delivery, data transfer and domain verification remain account-side work; deployment is not claimed. Follow [docs/SECURITY_REVIEW.md](docs/SECURITY_REVIEW.md) for verified fixes and the destination security checks that remain.
 
 ## 11. Quick troubleshooting
 
@@ -379,13 +382,32 @@ Follow [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) for current 
 | A public change appears locally but not on the review site | Build and explicitly deploy the matching source; pushing GitHub alone does not update the site |
 | A legal label is missing | Blank legal fields are intentionally omitted; add the real value when ready |
 | Signed in but employee access is refused | Check the actual account email, member active status and private Site audience |
-| An approved colleague receives no invitation | The app creates membership but does not send email; share access through the intended channel separately |
+| An invited colleague receives no email | The app creates an inactive invitation but does not send email; share the invitation instructions through the intended channel, then require acceptance and owner approval |
 | Profile photo cannot upload | Save pending text first; use a valid JPEG/PNG/WebP within size/dimension limits |
 | Profile save reports a concurrent change | Reload saved details, review and re-enter the intended edit |
 | Avatar remains initials | Check whether the photo saved and the authenticated photo request succeeds |
 | Local workspace reports missing tables | Build and apply the initial local migration once |
 | A column cannot be deleted | Move referenced tickets and update related automation rules |
 | News is marked cached | The live refresh failed; the shown retrieval date belongs to the preserved real headlines |
-| You need to change a password | Use the sign-in provider's account settings; there is no source password to edit |
+| You need to change a password | Private Site: provider settings. Hostinger: verified password change or explicit offline owner recovery; never edit a source password |
 
 For a review of what has actually been verified in this delivery, use [docs/VERIFICATION.md](docs/VERIFICATION.md). For implementation details, use [docs/BACKEND.md](docs/BACKEND.md) and [docs/CUSTOMISATION.md](docs/CUSTOMISATION.md).
+
+## Hostinger runtime and sign-in code map
+
+| Change | File or command |
+| --- | --- |
+| Node build/export | `hostinger/prepare.mjs`, `hostinger/build.mjs` |
+| Private server settings | Hostinger Environment Variables; blank `hostinger/.env.example` |
+| HTTPS origin, trusted request context and Node entry | `hostinger/server.mjs`, `hostinger/http.mjs`, `hostinger/runtime-env.ts` |
+| Email/password/code interface and colours | `hostinger/login-page.tsx`, `hostinger/login.css` |
+| Password and OTP policies | `hostinger/auth/index.mjs`, `hostinger/auth/password.mjs` |
+| Authentication tables | `hostinger/auth/schema.sql` |
+| Workspace/private portrait tables | `hostinger/schema.sql`, `hostinger/storage.mjs` |
+| Mail transport | `hostinger/mail.mjs`; actual mailbox settings stay outside source |
+| Initialize / recover owner | `npm run hostinger:setup`; recovery is an explicit separate flag |
+| Check database and SMTP connection | `npm run hostinger:check -- --smtp` |
+| Build / start | `npm run build:hostinger`; `npm run start:hostinger` |
+| Bounded authentication cleanup | `npm run hostinger:setup -- --cleanup` |
+
+Choose **Start empty workspace** for real operations or **Load sample workspace** for review. Existing data cannot be reset with either initialization action. Runtime data and uploaded portraits are not included in a source ZIP. Read the hosting and user-access guides for identity-continuity limits and separate data migration.

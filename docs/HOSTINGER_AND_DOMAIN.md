@@ -1,115 +1,166 @@
-# Hostinger, your domain, and the future NorthWallEg launch
+# NorthWallEg on Hostinger
 
-Verified against official documentation on 23 November 2026. Hosting products and limits can change; check the linked pages when choosing a plan.
+Updated 23 November 2026. Domain: **northwallegy.com**. Repository: **23samjessen/NorthWall_EG**.
 
-## Recommended route
+## Delivery status
 
-**Buy your domain at Hostinger and connect it to the current NorthWallEg application hosting.** The domain registrar manages the address you own. The application host runs the website, employee workspace, authentication integration, and database. These can be different providers.
+The project includes a standard Next.js Node server, MySQL workspace and private-photo storage, email/password sign-in with an email verification code, mandatory temporary-password replacement, and owner-controlled invitations and approval. The existing private review Site retains its original hosting and gateway login.
 
-The current application already uses a Cloudflare Worker, D1 storage, and the hosting platform's trusted sign-in gateway. Keeping that application hosting avoids a runtime and authentication migration. Hostinger can manage the DNS records for a domain whose authoritative nameservers point to Hostinger. [1]
+The Node production build and local checks pass. **The application has not been deployed or configured in your Hostinger account.** No actual database/mailbox credentials have been supplied, no real email code has been delivered, and no owner password has been provisioned there. Real MySQL CI/staging evidence is recorded separately in VERIFICATION.md.
 
-Keep the website private for review until the company is registered and you are ready to launch. Attaching a domain does not change the site's audience or grant employee access. Making the source repository public also does not make the hosted application public.
+Your screenshot showing **Coming soon** is Hostinger's placeholder. Your File Manager screenshot shows public_html; putting the source ZIP there will not start the Node server. Use **Deploy Your Web App**, then **Connect with GitHub** or **Upload your files**. Hostinger supports both workflows. [1]
 
-No domain has been supplied for this project yet. This guide therefore contains no DNS destination addresses or verification tokens. Obtain those values from the application host for the exact domain you purchase.
+## 1. Application and build settings
 
-## Your hosting choices
+Connect the existing repository directly and grant access only to 23samjessen/NorthWall_EG if GitHub offers repository selection. The supplied source ZIP is an alternative, with package.json at its root. Do not upload node_modules, private environment files or generated builds.
 
-| Choice | How it works | What it means for NorthWallEg |
-| --- | --- | --- |
-| **Hostinger domain + current application hosting** | Register the domain at Hostinger and point the required DNS records to the existing application host. | Recommended. Preserve the Worker, database, trusted authentication gateway, and private review access. |
-| **Hostinger managed Node application** | Hostinger currently offers managed Node on Business/Unlimited web hosting and Cloud plans, with Git repository or archive deployment. [2] | Requires a planned code and data migration. The current ZIP is not a ready-to-run Hostinger Node deployment. |
-| **Hostinger VPS** | Run and manage the application's server environment yourself; Hostinger offers Node setup options with root access. [3] | More control over services and ports, with server maintenance and backups to operate. The Worker, data, and authentication dependencies still need adaptation. |
+| Hostinger setting | Value |
+| --- | --- |
+| Website type | Node.js web application |
+| Framework preset | **Other**, so the custom authenticated entry is used |
+| Node version | **24**; local checks used 24.22.3 |
+| Package manager | npm |
+| Root directory | `.` — directory containing package.json |
+| Branch | `main` |
+| Install command, if requested | `npm ci` |
+| Build command | `npm run build:hostinger` |
+| Output directory, if requested | `.hostinger-app` |
+| Entry file | `hostinger/server.mjs`, relative to project root |
+| Start command, if requested | `npm run start:hostinger` |
+| Internal port | `3000` |
 
-A Hostinger account alone does not identify which hosting products you have. Before choosing Hostinger to run the application, check your exact plan name and whether hPanel offers **Web App / Node.js** or **VPS**. CPU, memory, storage, and site quotas depend on that plan. There is no need to buy an application-hosting upgrade merely to use a Hostinger-registered domain with the current host.
+The build creates .hostinger-app/.next, copies public assets and prepares Node-specific bindings. Keep the generated application directory alongside the root hostinger entry and installed dependencies. Do not select static export or bypass the custom entry with next start: protected identity comes from its verified request context.
 
-## Why this app needs work before moving to Hostinger compute
+The build explicitly runs **next build --webpack**. Hostinger requires webpack for Next.js 16.3.3 and newer on its current build servers; this project uses 16.4.5. [2] Next receives the public HTTPS origin/port 443 while the separate HTTP listener uses internal port 3000. An actual built-Next test verifies this distinction.
 
-Hostinger supports Next.js and standard Node frameworks. That support does not establish compatibility with every deployment that uses a Next.js-style application structure. [2]
+The exact plan and resources still need confirmation. A domain alone does not supply a running application, database or sending mailbox. Check the current account before buying an upgrade.
 
-NorthWallEg currently uses **Vinext on Cloudflare Workers**. Cloudflare documents Vinext's Worker deployment and access to platform bindings through `cloudflare:workers`; D1 is Cloudflare's SQL database accessed through a Worker binding. [4], [5]
+## 2. Persistent database and sending mailbox
 
-The following migration requirements are engineering conclusions from this application's dependencies and those documented runtime differences:
+Create a MySQL database and user in the website database settings. Use Hostinger's complete account-prefixed names. Its documented same-service connection uses **127.0.0.1:3306**. [3]
 
-- **Server runtime:** provide a supported Node server entry point and build/start configuration, replacing the Worker deployment assumptions.
-- **Database:** retain D1 through a deliberately designed server-side integration or migrate its data to an appropriate database. Preserve workspace revisions, transactions, membership records, and the audit chain. Copying the repository does not copy the hosted D1 data.
-- **Authentication:** implement a real identity provider and verified server sessions on the destination. The current host supplies trusted identity headers; an ordinary Hostinger server will not supply that gateway automatically. Do not accept identity headers sent directly by a browser as proof of identity.
-- **Storage and secrets:** map any required object-storage bindings, server-only configuration, and credentials to the destination. Local demonstration identity settings are not production authentication.
-- **Verification:** test sign-in, role restrictions, personal notes, direct-message access, ticket writes, news fetching, and audit persistence in a separate destination environment before changing the live address.
+Workspace state, audit events, authentication and private portrait BLOBs use InnoDB. Preflight requires max_allowed_packet of at least 4 MiB; portraits remain limited to 2 MiB. Schema setup never drops or resets existing records.
 
-Uploading only static files would omit the workspace API and its persistent operations. A source ZIP is a handover of code; it is not an export of employee data or a completed migration.
+Configure an actual sending mailbox. **Your Hostinger login email is not automatically an SMTP mailbox.** Hostinger mail uses smtp.hostinger.com, port 465 with TLS or 587 with mandatory STARTTLS. Port 25 is not used. [4]
 
-### Current managed Node limits
+Hostinger replaces deployment directories during redeployment. Records and private portraits are therefore stored in MySQL. Do not keep live uploads, SQLite databases, credentials or backups in public_html, hbuilds or .hostinger-app. [1]
 
-Hostinger's published managed Node limits are: [6]
+## 3. Private environment settings
 
-| Plan | NPROC | Entry processes |
-| --- | ---: | ---: |
-| Business/Unlimited | 120 | 60 |
-| Cloud Startup | 200 | 100 |
-| Cloud Professional | 400 | 200 |
-| Cloud Enterprise | 600 | 300 |
-| Cloud Enterprise Plus | 800 | 400 |
+Use Hostinger's **Environment Variables** settings. The blank template is hostinger/.env.example. Never commit actual values, include them in the ZIP or show them in screenshots.
 
-NPROC counts processes and threads across the plan; it is not a supported-user count. Websites share the plan's process and memory resources. Node site count follows the plan's website quota. Requests stop after **120 seconds**. Managed hosting does not accept inbound WebSockets, guarantee continuous background workers, or provide custom-port services such as Docker or Redis. [6]
+| Setting | Value or purpose |
+| --- | --- |
+| NORTHWALL_RUNTIME | `hostinger`; also selects the Node variant for ordinary npm build/start |
+| NODE_ENV | `production` |
+| PORT | `3000` |
+| APP_ORIGIN | `https://northwallegy.com` |
+| ADDITIONAL_HOSTS | `www.northwallegy.com`, only when attached with a valid certificate |
+| PUBLIC_LAUNCH | **`false`** until registration and the owner's launch decision |
+| EDGE_HTTPS_CONFIRMED | `true` only after verifying Hostinger SSL and Force HTTPS |
+| OWNER_EMAIL | `23samjessen@gmail.com` |
+| AUTH_SECRET | Unique random 32-byte secret encoded as 64 hexadecimal characters |
+| DB_HOST / DB_PORT | Usually `127.0.0.1` / `3306` |
+| DB_NAME / DB_USER / DB_PASSWORD | Private database settings from your account |
+| SMTP_HOST / SMTP_PORT | `smtp.hostinger.com` / `465`, or your actual verified-TLS provider |
+| SMTP_USER / SMTP_PASSWORD / SMTP_FROM | Actual sending mailbox and credentials |
 
-The present workspace uses periodic chat polling. A future design with WebSocket chat or continuous queue workers would need a suitable service architecture. Do not estimate employee capacity from the process table: load-test the chosen application and plan.
+Generate AUTH_SECRET in a private terminal:
 
-## Connecting the domain without moving the app
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
 
-When you have purchased the domain and are ready to configure it:
+Save it securely. It is not the owner's password. Rotation invalidates pending-code verification and changes pseudonymous rate/audit keys, so plan rotations as maintenance.
 
-1. Choose the canonical address: the root domain or a `www` hostname. Decide whether both should reach the site and which should redirect to the other.
-2. Keep the existing hosted site private while preparing the connection. Use the current application's supported **Add custom domain** operation for the chosen hostname and existing project. It returns the actual DNS targets, verification records, and domain/SSL status.
-3. Save the returned instructions. A subdomain normally receives a **CNAME destination**; the root-domain flow can return **A-record targets**. Use the exact record types and values returned for this project. Do not infer them from the preview URL.
-4. At the authoritative DNS provider, update the required records. If Hostinger manages the nameservers, open **hPanel → Domains → DNS**, select the domain, and use its DNS records page. If another provider manages the nameservers, edit the records there. [1]
-5. Add any ownership/SSL verification records exactly as supplied. Preserve existing mail records, including MX and the relevant SPF, DKIM, and DMARC records. Export the current DNS zone before changes if it already serves other services. [1]
-6. Refresh the application's custom-domain status until ownership validation and HTTPS certificate status succeed. Check the intended root/`www` behavior and sign-in flow over HTTPS.
+A remote database requires DB_SSL_CA_BASE64 and verified TLS. Local Hostinger MySQL does not require that setting.
 
-Hostinger's CNAME editor expects the record's host label and destination hostname. Use the application's returned root-domain instructions for the apex rather than copying a subdomain CNAME rule there. DNS propagation can take time; Hostinger advises allowing up to 24 hours for its CNAME changes. [7]
+APP_ORIGIN and PUBLIC_LAUNCH must match the build manifest; rebuild after changing either. With public launch disabled, unauthenticated visitors reach sign-in before marketing pages. Employee records remain separately protected by membership approval. Search indexing stays disabled.
 
-Do not change nameservers solely because the app runs elsewhere when the required records can be managed in the existing authoritative zone. A domain connection is separate from publishing the marketing website.
+## 4. Initialize storage and provision the owner
 
-## Future launch checklist
+Use a private application terminal/SSH session with Node 24 and the same server environment settings. If those are not supplied to the terminal automatically, load a private environment file outside all public/deployment directories. Do not put that file in the project.
 
-These are preparation and verification steps. Company registration and your decision to go live remain the launch gate; this document does not schedule an automatic publication.
+From the directory containing package.json:
 
-- [ ] Confirm registration is complete and approve the public company details. Enter real contact channels, locations, team names/roles, and approved photographs in `lib/company-profile.json`, following [COMPANY_CONTENT.md](COMPANY_CONTENT.md).
-- [ ] Supply the registration and tax identifiers you want displayed. Keep unprovided fields empty and omit empty labels from public pages. Do not publish example numbers as company identifiers.
-- [ ] Choose and purchase the domain, then confirm the exact canonical hostname.
-- [ ] Connect that hostname using the generated DNS instructions and verify the HTTPS certificate while review access remains private.
-- [ ] Update the site's canonical origin, metadata, sitemap, social previews, and any identity-provider return URLs for the final hostname. Check both supported language routes and links.
-- [ ] Confirm that the published contact information is correct. Test the actual contact behavior; displaying an email address or generating a brief does not itself install an email delivery service.
-- [ ] Preserve the current database and storage bindings. Record the deployed source revision and prepare the database backup/restore procedure before changing runtime or storage configuration.
-- [ ] Test with an anonymous visitor, a normal employee, and an administrator. Public marketing should be accessible after launch; employee resources and private APIs must still enforce verified sign-in and active membership.
-- [ ] Test ticket creation and assignment, replies/mentions, notes, chat, calendar, admin changes, news timestamps, and evidence records on the final hostname. Check phone and desktop layouts.
-- [ ] Once the registration condition is met and you instruct the launch, change the intended public audience and search-indexing settings. Keep workspace and account routes out of public indexing. Review the live pages and redirects after that change.
+```bash
+npm ci
+npm run hostinger:setup
+```
 
-Search metadata helps describe the business accurately; it cannot guarantee a top Google position. Public launch, domain attachment, repository visibility, and employee membership are four separate settings.
+Setup creates missing tables without replacing records. It asks for a temporary owner password and confirmation **with terminal input hidden**. The password supplied in chat is deliberately absent from source and the archive and has not been set remotely. Enter it only through this private setup prompt. A temporary credential expires after 24 hours.
 
-### Where to configure the public details
+First sign-in requires:
 
-`lib/company-profile.json` is the central public configuration: company registration fields, website origin/review settings/hero image, contact arrays, and public team information. `lib/site-config.ts` derives the values used by the site. Follow [COMPANY_CONTENT.md](COMPANY_CONTENT.md) for the exact fields and image instructions, and [CUSTOMISATION.md](CUSTOMISATION.md) for design and feature changes.
+1. Email username and temporary password.
+2. A six-digit email code.
+3. A different password of 15–128 characters, enforced on the server.
+4. A full identity session, then workspace access.
 
-Employee **My profile** settings are separate from the public team directory. Private profile photographs use the application's object storage; do not copy employee data or photo uploads into the public source repository.
+Schema only: `npm run hostinger:setup -- --schema-only`.
 
-## Source and data ownership
+Explicit owner recovery: `npm run hostinger:setup -- --recover-owner`. This changes the owner's credential and revokes existing sessions while preserving identity; do not run it during routine deployment.
 
-The approved application's source belongs in `23samjessen/NorthWall_EG`. Keep runtime credentials, user records, tickets, notes, messages, and evidence data out of the public Git repository. Store production records in the configured application database and protected storage.
+For an imported verified workspace, setup checks and preserves its existing owner identity. Historical non-owner identities require reviewed migration mapping. Public email enrollment cannot claim their old IDs or private history.
 
-Pushing source to GitHub does not automatically update the current Sites deployment, and editing the hosted project does not automatically update GitHub. See [GITHUB_AND_DEPLOYMENT.md](GITHUB_AND_DEPLOYMENT.md) for the source/deployment workflow and [BACKEND.md](BACKEND.md) for database and identity details. If a future Hostinger Git deployment is deliberately configured, that is a separate deployment pipeline. [2]
+## 5. Preflight, HTTPS and deployment
 
-## Official references
+```bash
+npm run hostinger:check
+npm run hostinger:check -- --smtp
+npm run build:hostinger
+npm run start:hostinger
+```
 
-[1] Hostinger, “How to manage DNS records at Hostinger.” Accessed 23 November 2026. <https://www.hostinger.com/support/1583249-how-to-manage-dns-records-at-hostinger/>
+Preflight checks configuration, tables, packet capacity and owner provisioning. The optional SMTP check authenticates to the mailbox without sending email; real sign-in is still needed to test delivery. Hostinger normally runs build/start after the deployment settings are complete.
 
-[2] Hostinger, “How to add a Node.js web app in Hostinger.” Accessed 23 November 2026. <https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/>
+Enable a valid domain certificate and **Force HTTPS**. Verify HTTP redirects to HTTPS and the certificate is valid. The app adds HSTS but cannot issue or renew certificates. It uses a fixed canonical origin and ignores visitor-selected proxy/identity headers; Hostinger warns that forwarding headers can be forged outside its trusted CDN path. [5]
 
-[3] Hostinger, “Node.js hosting options at Hostinger.” Accessed 23 November 2026. <https://www.hostinger.com/support/node-js-hosting-options-at-hostinger/>
+| Intended page | URL |
+| --- | --- |
+| Company website | https://northwallegy.com/ |
+| Sign-in | https://northwallegy.com/sign-in |
+| Employee workspace | https://northwallegy.com/workspace |
+| Security insights | https://northwallegy.com/insights |
 
-[4] Cloudflare, “Next.js — Workers documentation.” Accessed 23 November 2026. <https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/>
+These are destination URLs, **not a claim that deployment has succeeded**. With PUBLIC_LAUNCH=false, sign in before viewing company pages.
 
-[5] Cloudflare, “Getting started — D1 documentation.” Accessed 23 November 2026. <https://developers.cloudflare.com/d1/get-started/>
+On an empty workspace choose **Start empty workspace** for real work or **Load sample workspace** for design review. Both initializers refuse to overwrite an existing workspace.
 
-[6] Hostinger, “Hostinger Node.js limits for web and cloud plans.” Accessed 23 November 2026. <https://www.hostinger.com/support/hostinger-node-js-limits-for-web-and-cloud-plans/>
+Test invitation enrollment, acceptance, denial before approval, owner approval, role boundaries and revocation. Verify a private portrait and audit export, then redeploy and confirm records/photos persist.
 
-[7] Hostinger, “How to manage CNAME records at Hostinger.” Accessed 23 November 2026. <https://www.hostinger.com/support/4738777-how-to-manage-cname-records-at-hostinger/>
+## 6. Existing data is a separate migration
+
+The original private Site uses D1/R2. Git and the source ZIP contain neither its live employee database nor uploaded portraits.
+
+Obtain an authorized complete export and record the cutover time. Preserve member IDs, workspace JSON, revisions, UTC strings, audit ordering/hashes and portrait associations. Import portraits into the new BLOB table under their original object keys and verify byte sizes/hashes. Restore into a fresh staging database and verify the audit chain before cutover. Provision identity mappings explicitly; never infer a historical identity from a recycled email address.
+
+Back up both systems, stop competing writes during cutover and retain a tested rollback copy. No live records or portraits were exported, replaced or reset during this source revision. Starting a fresh workspace instead of retaining demonstration data is a separate owner decision.
+
+## 7. Maintenance and later public launch
+
+Git covers source only. Back up the MySQL database, including profile_photos, through private account controls and test restoration separately. Workspace audit history is tamper-evident; database administrators can replace stored data, so independent evidence copies matter.
+
+Run bounded authentication cleanup through an available Hostinger cron/maintenance facility:
+
+```bash
+npm run hostinger:setup -- --cleanup
+```
+
+Each call removes up to 1,000 expired records per category and authentication events older than 30 days. Startup also performs one bounded cleanup. Workspace audit history is not deleted. There is no always-running background worker.
+
+After company registration, complete legal/tax/contact fields in lib/company-profile.json, set PUBLIC_LAUNCH=true, rebuild and deploy. Verify canonical URLs, sitemap, robots, contact details and HTTPS before submitting the sitemap to Google Search Console. Employee routes remain private/noindex. No search-ranking or traffic guarantee is made.
+
+Same-email replacement staff, imported non-owner accounts and non-owner password recovery require a controlled offline retirement/provisioning procedure. Public enrollment deliberately refuses to reuse historical authentication identity. SMS is not implemented; email verification becomes operational after configuring SMTP.
+
+## Primary references
+
+[1] Hostinger, “How to add a Node.js web app in Hostinger.” https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/
+
+[2] Hostinger, “How to fix Next.js 16 Turbopack build errors on Hostinger.” https://www.hostinger.com/support/how-to-fix-next-js-16-turbopack-build-errors-on-hostinger/
+
+[3] Hostinger, “Connecting a Hostinger MySQL database to a Node.js application.” https://www.hostinger.com/support/connecting-a-hostinger-mysql-database-to-a-node-js-application/
+
+[4] Hostinger, “How to fix SMTP email sending errors on Hostinger.” https://www.hostinger.com/support/how-to-fix-smtp-email-sending-errors-on-hostinger/
+
+[5] Hostinger, “CDN visitor IP addresses” and “How to enable or disable HTTPS.” https://www.hostinger.com/support/hostinger-cdn-visitor-ip-addresses-in-logs-and-analytics/ ; https://www.hostinger.com/support/1583201-how-to-enable-or-disable-https-for-your-website-at-hostinger/

@@ -2,9 +2,15 @@ import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 import { shouldNoIndex } from "../lib/seo";
+import { requestSecurity, requestRejection, secureResponse, httpsRedirect } from "../lib/security-headers";
 
 const worker = {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    const production = !import.meta.env.DEV;
+    const pathname = new URL(request.url).pathname;
+    const security = requestSecurity(request, production);
+    const rejected = httpsRedirect(security.request, production) ?? requestRejection(security.request);
+    if (rejected) return secureResponse(rejected, pathname, production, security.csp, shouldNoIndex(pathname));
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
@@ -24,19 +30,15 @@ const worker = {
         },
       };
     }
-    const response = await runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
-    const secured = new Headers(response.headers);
-    secured.set('X-Content-Type-Options', 'nosniff');
-    secured.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    secured.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    if (shouldNoIndex(new URL(request.url).pathname)) secured.set('X-Robots-Tag', 'noindex, nofollow');
-    else secured.delete('X-Robots-Tag');
-    if (!import.meta.env.DEV) {
-      secured.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://chatgpt.com; form-action 'self'");
-      secured.set('Strict-Transport-Security', 'max-age=31536000');
+    try {
+      const response = await runWithConnectorBinding(binding, () => handler.fetch(security.request, env, ctx));
+      return secureResponse(response, pathname, production, security.csp, shouldNoIndex(pathname));
+    } catch (error) {
+      // Keep exception details and credentials out of visitor responses.
+      console.error('Application request failed', { name: error instanceof Error ? error.name : 'Error' });
+      const response = Response.json({ error: 'request_failed', message: 'The request could not be completed. Please try again.' }, { status: 500 });
+      return secureResponse(response, pathname, production, security.csp, shouldNoIndex(pathname));
     }
-    if (['/api/workspace', '/api/profile-photo'].some(path => new URL(request.url).pathname.startsWith(path))) secured.set('Cache-Control', 'private, no-store');
-    return new Response(response.body, {status:response.status, statusText:response.statusText, headers:secured});
   },
 };
 

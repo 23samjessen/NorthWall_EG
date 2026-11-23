@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import type { Member, WorkspaceState, WorkspaceResponse, AuditEntry, Ticket, Comment, Message, Note, CalendarEvent, CustomField, AutomationRule } from './workspace-types';
+import type { Member, MemberOnboarding, OnboardingResponse, WorkspaceState, WorkspaceResponse, AuditEntry, Ticket, Comment, Message, Note, CalendarEvent, CustomField, AutomationRule } from './workspace-types';
 import { emptyState, demoState } from './workspace-seed';
 import resources from './knowledge-resources.json';
 
@@ -11,12 +11,19 @@ type PhotoMetadata={key:string;contentType:'image/png'|'image/jpeg'|'image/webp'
 type StoredMember=Member&{_profilePhoto?:PhotoMetadata};
 const MAX_PHOTO_BYTES=2*1024*1024;
 const MAX_PHOTO_REQUEST_BYTES=MAX_PHOTO_BYTES+16*1024;
+const MAX_AUDIT_EXPORT_BYTES=8*1024*1024;
+const MAX_AUDIT_EXPORT_ROWS=10000;
+const INVITATION_LIFETIME_MS=7*24*60*60*1000;
+// This expression contains only fixed column names. BLOB lengths measure UTF-8
+// bytes, including multibyte text, before any history rows enter worker memory.
+const AUDIT_BYTES_SQL='COALESCE(SUM(length(CAST(id AS BLOB))+length(CAST(sequence AS BLOB))+length(CAST(timestamp AS BLOB))+length(CAST(actor_id AS BLOB))+length(CAST(actor_name AS BLOB))+length(CAST(action AS BLOB))+length(CAST(object_id AS BLOB))+length(CAST(request_id AS BLOB))+length(CAST(changes AS BLOB))+length(CAST(previous_hash AS BLOB))+length(CAST(hash AS BLOB))),0)';
 const PROFILE_FIELDS=['name','jobTitle','department','workPhone','location','bio'] as const;
 function profileDetails(member:Member){return {name:member.name,jobTitle:member.jobTitle||'',department:member.department||'',workPhone:member.workPhone||'',location:member.location||'',bio:member.bio||''};}
-function publicMember(member:Member):Member{
+function publicMember(member:Member,includeIdentityAnchor=false):Member{
   const {_profilePhoto,photoUrl:_url,photoUpdatedAt:_updated,profileCompletion:_completion,...safe}=member as StoredMember;
+  if(safe.onboarding&&!includeIdentityAnchor){const {identityAnchorUserId:_anchor,...onboarding}=safe.onboarding;safe.onboarding=onboarding;}
   const hasPhoto=!!_profilePhoto;const hasJobTitle=!!member.jobTitle?.trim();
-  return {...safe,...(_profilePhoto?{photoUrl:`/api/profile-photo?memberId=${encodeURIComponent(member.id)}&v=${_profilePhoto.sha256.slice(0,16)}`,photoUpdatedAt:_profilePhoto.uploadedAt}:{}),profileCompletion:{hasPhoto,hasJobTitle,complete:hasPhoto&&hasJobTitle}};
+  return {...safe,active:member.sample?member.active:accountEnabled(member),...(_profilePhoto?{photoUrl:`/api/profile-photo?memberId=${encodeURIComponent(member.id)}&v=${_profilePhoto.sha256.slice(0,16)}`,photoUpdatedAt:_profilePhoto.uploadedAt}:{}),profileCompletion:{hasPhoto,hasJobTitle,complete:hasPhoto&&hasJobTitle}};
 }
 function photoEvidence(photo:PhotoMetadata|undefined){if(!photo)return null;const {key:_key,...metadata}=photo;return metadata;}
 
@@ -34,22 +41,63 @@ export function requestIdentity(request:Request):Identity {
 }
 function bootstrapAllowed(identity:Identity){
   const raw=(env as unknown as Record<string,unknown>).ADMIN_EMAILS;
-  const allowed=typeof raw==='string'?raw:'23samjessen@gmail.com';
+  const allowed=typeof raw==='string'?raw:'';
   return allowed.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean).includes(identity.email);
 }
 function bootstrapMember(identity:Identity):Member{return {id:'owner',userId:identity.userId,name:identity.name==='23samjessen'?'Sam Jessen':identity.name,email:identity.email,role:'admin',active:true,color:'#245b53',jobTitle:identity.email==='23samjessen@gmail.com'?'Network & Cybersecurity Engineer':'Workspace administrator',createdAt:iso()};}
+function ownerAccount(member:Member){return member.id==='owner'&&!!member.userId&&member.active&&member.role==='admin'&&!member.sample;}
+function identityAnchor(member:Member):string|null|undefined{
+  const saved=member.onboarding?.identityAnchorUserId;if(typeof saved==='string'&&saved)return saved;
+  if(saved!==undefined&&saved!==null)return undefined;
+  if(member.userId)return member.userId;
+  // Existing bound records establish continuity from their persisted ID. An
+  // older lifecycle record that already lost its binding is never guessed.
+  return saved===null||!member.onboarding?null:undefined;
+}
+function identityCanBind(member:Member,userId:string){const anchor=identityAnchor(member);return anchor!==undefined&&(anchor===null||anchor===userId);}
+function retiredAccount(member:Member){return member.id!=='owner'&&!member.sample&&!member.active&&!member.userId&&member.onboarding?.status==='revoked';}
+function approvedOnboarding(member:Member){
+  const onboarding=member.onboarding;if(!onboarding||onboarding.status!=='approved'||onboarding.invitedBy!=='owner'||onboarding.approvedBy!=='owner'||!onboarding.invitationId||!member.userId)return false;
+  if(identityAnchor(member)!==member.userId)return false;
+  const invited=Date.parse(onboarding.invitedAt),accepted=Date.parse(onboarding.acceptedAt||''),approved=Date.parse(onboarding.approvedAt||''),expires=Date.parse(onboarding.expiresAt);
+  return [invited,accepted,approved,expires].every(Number.isFinite)&&invited<=accepted&&accepted<=approved&&approved<expires;
+}
+function accountEnabled(member:Member){return !member.sample&&member.active&&(ownerAccount(member)||member.id!=='owner'&&approvedOnboarding(member));}
+function assignableMember(member:Member){return member.sample?member.active:accountEnabled(member);}
+function accountOwner(state:WorkspaceState,user:Member){const owner=state.users.find(member=>member.id==='owner');if(!owner||!ownerAccount(owner)||user.id!==owner.id||user.userId!==owner.userId)fail('owner_required','Only the workspace owner can manage invitations and account access.',403);}
+function invitationCurrent(onboarding:MemberOnboarding|undefined,time=Date.now()){return !!onboarding&&onboarding.invitedBy==='owner'&&!!onboarding.invitationId&&Number.isFinite(Date.parse(onboarding.invitedAt))&&Number.isFinite(Date.parse(onboarding.expiresAt))&&Date.parse(onboarding.invitedAt)<=time&&Date.parse(onboarding.expiresAt)>time;}
+function newInvitation(user:Member,time:string,anchor:string|null=null):MemberOnboarding{return {status:'invited',invitationId:id('invitation'),invitedAt:time,invitedBy:user.id,expiresAt:new Date(Date.parse(time)+INVITATION_LIFETIME_MS).toISOString(),identityAnchorUserId:anchor};}
+function accountEvidence(member:Member){const {identityAnchorUserId:_anchor,...onboarding}=member.onboarding||{};return {id:member.id,email:member.email,userId:member.userId,role:member.role,active:member.active,onboarding:member.onboarding?onboarding:null,identityContinuity:typeof identityAnchor(member)==='string'};}
 function memberFor(state:WorkspaceState,identity:Identity):Member {
-  const member=state.users.find(u=>u.userId===identity.userId)||state.users.find(u=>!u.userId&&u.email.toLowerCase()===identity.email&&!u.sample);
-  if(!member?.active)throw new ApiError(403,'membership_required','Your account is not an active member of this employee workspace.');
+  const member=state.users.find(u=>u.userId===identity.userId);
+  if(!member||!accountEnabled(member))throw new ApiError(403,'membership_required','Your account needs an owner invitation and approval before the employee workspace is available.');
   return member;
 }
+function ownInvitation(state:WorkspaceState,identity:Identity){
+  const bound=state.users.find(member=>!member.sample&&member.userId===identity.userId);
+  if(bound)return accountEnabled(bound)||bound.email.toLowerCase()===identity.email?bound:undefined;
+  const candidates=state.users.filter(member=>member.id!=='owner'&&!member.sample&&!member.userId&&member.email.toLowerCase()===identity.email&&identityCanBind(member,identity.userId));
+  return candidates.find(member=>member.onboarding?.status==='invited')||candidates[0];
+}
+function onboardingFor(member:Member|undefined,identity:Identity):OnboardingResponse{
+  if(!member||member.sample||!identityCanBind(member,identity.userId))return {status:'not_invited',email:identity.email};
+  if(member.userId===identity.userId&&accountEnabled(member))return {status:'approved',email:member.email};
+  const onboarding=member.onboarding;if(!onboarding)return {status:'not_invited',email:identity.email};
+  const details={email:member.email,...(onboarding.invitationId?{invitationId:onboarding.invitationId}:{}),expiresAt:onboarding.expiresAt,...(onboarding.acceptedAt?{acceptedAt:onboarding.acceptedAt}:{})};
+  if(onboarding.status==='revoked')return {status:'revoked',...details};
+  if(onboarding.status!=='invited'&&onboarding.status!=='pending_approval')return {status:'not_invited',email:identity.email};
+  if(!invitationCurrent(onboarding))return {status:'expired',...details};
+  return {status:onboarding.status,...details};
+}
+export async function readInvitationStatus(request:Request):Promise<OnboardingResponse>{const identity=requestIdentity(request);const record=await load();if(!record)return {status:'not_invited',email:identity.email};const state=JSON.parse(record.payload) as WorkspaceState;return onboardingFor(ownInvitation(state,identity),identity);}
 function admin(user:Member){if(user.role!=='admin')throw new ApiError(403,'admin_required','Only an administrator can use this action.');}
 function manager(user:Member){if(user.role!=='admin'&&user.role!=='manager')throw new ApiError(403,'manager_required','A manager or administrator is required for this action.');}
 export function visibleState(state:WorkspaceState,user:Member):WorkspaceState {
-  return {...state,users:state.users.map(publicMember),notes:state.notes.filter(n=>n.visibility==='team'||n.ownerId===user.id),messages:state.messages.filter(m=>!m.recipientId||m.recipientId===user.id||m.authorId===user.id),notifications:state.notifications.filter(n=>n.userId===user.id)};
+  const users=state.users.filter(member=>ownerAccount(user)||member.sample||accountEnabled(member)).map(member=>{const visible=publicMember(member,ownerAccount(user));if(!ownerAccount(user)&&member.id!==user.id)delete visible.onboarding;return visible;});
+  return {...state,users,notes:state.notes.filter(n=>n.visibility==='team'||n.ownerId===user.id),messages:state.messages.filter(m=>!m.recipientId||m.recipientId===user.id||m.authorId===user.id),notifications:state.notifications.filter(n=>n.userId===user.id)};
 }
 async function load(){return db().prepare('SELECT id,payload,revision,last_hash,updated_at FROM workspace WHERE id = ?').bind('main').first<Stored>();}
-function responseFor(state:WorkspaceState,user:Member,revision:number,needsSetup=false):WorkspaceResponse{return {user:publicMember(user),state:visibleState(state,user),revision,needsSetup,resources};}
+function responseFor(state:WorkspaceState,user:Member,revision:number,needsSetup=false):WorkspaceResponse{return {user:publicMember(user,ownerAccount(user)),state:visibleState(state,user),revision,needsSetup,resources};}
 export async function readWorkspace(request:Request):Promise<WorkspaceResponse>{
   const identity=requestIdentity(request);const record=await load();
   if(!record){if(!bootstrapAllowed(identity))fail('membership_required','This workspace has not been enabled for your account.',403);const owner=bootstrapMember(identity);return responseFor(emptyState(owner),owner,0,true);}
@@ -63,17 +111,18 @@ export function validateSameOrigin(request:Request){
 }
 export function validateWriteOrigin(request:Request){
   validateSameOrigin(request);
-  if(!request.headers.get('content-type')?.toLowerCase().startsWith('application/json'))fail('json_required','Send JSON for workspace changes.',415);
+  const mediaType=request.headers.get('content-type')?.split(';',1)[0].trim().toLowerCase();
+  if(mediaType!=='application/json')fail('json_required','Send JSON for workspace changes.',415);
 }
 function str(value:unknown,name:string,max=200,required=false){if(value===undefined||value===null){if(required)fail('invalid_input',`${name} is required.`);return '';}if(typeof value!=='string')fail('invalid_input',`${name} must be text.`);const clean=(value as string).trim();if(clean.length>max||required&&!clean)fail('invalid_input',`${name} must contain ${required?'1 to':'at most'} ${max} characters.`);return clean;}
 function bool(value:unknown,fallback=false){if(value===undefined)return fallback;if(typeof value!=='boolean')fail('invalid_input','Expected true or false.');return value as boolean;}
 function choice<T extends string>(v:unknown,allowed:T[],name:string):T{if(typeof v!=='string'||!allowed.includes(v as T))fail('invalid_input',`Choose a valid ${name}.`);return v as T;}
 function strings(v:unknown,name:string,max=40){if(v===undefined)return [];if(!Array.isArray(v)||v.length>max)fail('invalid_input',`${name} must be a list of at most ${max} entries.`);return [...new Set((v as unknown[]).map(x=>str(x,name,150,true)))];}
 function when(v:unknown,name:string,nullable=true):string|null{if(v===undefined||v===null||v===''){if(nullable)return null;fail('invalid_input',`${name} is required.`);}const value=str(v,name,50,true);const d=new Date(value);if(!Number.isFinite(d.getTime()))fail('invalid_input',`${name} must be a valid date.`);return d.toISOString();}
-function activeUser(state:WorkspaceState,value:unknown,nullable=false){if(nullable&&(value===null||value===undefined||value===''))return null;const userId=str(value,'User',100,true);if(!state.users.some(u=>u.id===userId&&u.active))fail('unknown_user','Choose an active team member.');return userId;}
+function activeUser(state:WorkspaceState,value:unknown,nullable=false){if(nullable&&(value===null||value===undefined||value===''))return null;const userId=str(value,'User',100,true);if(!state.users.some(u=>u.id===userId&&assignableMember(u)))fail('unknown_user','Choose an active, approved team member or a sample assignment persona.');return userId;}
 function mentions(state:WorkspaceState,v:unknown){return strings(v,'Mentions',20).map(m=>activeUser(state,m) as string);}
 function get<T extends {id:string}>(items:T[],raw:unknown,label:string):T{const entry=items.find(x=>x.id===str(raw,`${label} ID`,100,true));if(!entry)fail('not_found',`${label} was not found.`,404);return entry!;}
-function notify(state:WorkspaceState,userIds:string[],title:string,body:string,kind:'info'|'warning'|'urgent'|'mention'|'assignment',objectId:string|null,time:string){for(const userId of new Set(userIds)){if(state.users.some(u=>u.id===userId&&u.active))state.notifications.push({id:id('notification'),userId,title,body,kind,objectId,read:false,createdAt:time});}if(state.notifications.length>2000)state.notifications=state.notifications.slice(-2000);}
+function notify(state:WorkspaceState,userIds:string[],title:string,body:string,kind:'info'|'warning'|'urgent'|'mention'|'assignment',objectId:string|null,time:string){for(const userId of new Set(userIds)){if(state.users.some(u=>u.id===userId&&accountEnabled(u)))state.notifications.push({id:id('notification'),userId,title,body,kind,objectId,read:false,createdAt:time});}if(state.notifications.length>2000)state.notifications=state.notifications.slice(-2000);}
 function mentionAlerts(state:WorkspaceState,ids:string[],user:Member,body:string,objectId:string,time:string){notify(state,ids.filter(x=>x!==user.id),`${user.name} mentioned you`,body.slice(0,240),'mention',objectId,time);}
 function customValues(state:WorkspaceState,v:unknown,existing:Record<string,string|number|boolean>={}):Record<string,string|number|boolean>{
   if(v===undefined)v=existing;if(!v||typeof v!=='object'||Array.isArray(v))fail('invalid_input','Custom fields must be an object.');const out:Record<string,string|number|boolean>={};
@@ -86,7 +135,7 @@ function customValues(state:WorkspaceState,v:unknown,existing:Record<string,stri
 }
 function reaction(target:{reactions:{emoji:string;userIds:string[]}[]},emoji:unknown,userId:string){const allowed=['👍','❤️','😂','🎉','👀','✅','🙏','🔥','👋','🚀','😮','😢'];const selected=choice(emoji,allowed,'reaction');let item=target.reactions.find(r=>r.emoji===selected);if(!item){item={emoji:selected,userIds:[]};target.reactions.push(item);}if(item.userIds.includes(userId))item.userIds=item.userIds.filter(x=>x!==userId);else item.userIds.push(userId);target.reactions=target.reactions.filter(r=>r.userIds.length);}
 function canReadMessage(message:Message,user:Member){return !message.recipientId||message.recipientId===user.id||message.authorId===user.id;}
-function runRules(state:WorkspaceState,ticket:Ticket,trigger:'ticket.created'|'ticket.updated',time:string){for(const rule of state.rules.filter(r=>r.enabled&&r.trigger===trigger&&(r.priority==='any'||r.priority===ticket.priority))){if(rule.assignToId&&state.users.some(u=>u.id===rule.assignToId&&u.active))ticket.assigneeId=rule.assignToId;if(rule.moveToId&&state.columns.some(c=>c.id===rule.moveToId))ticket.status=rule.moveToId;notify(state,rule.notifyUserIds,rule.name,`${ticket.key}: ${ticket.title}`,'info',ticket.id,time);}}
+function runRules(state:WorkspaceState,ticket:Ticket,trigger:'ticket.created'|'ticket.updated',time:string){for(const rule of state.rules.filter(r=>r.enabled&&r.trigger===trigger&&(r.priority==='any'||r.priority===ticket.priority))){if(rule.assignToId&&state.users.some(u=>u.id===rule.assignToId&&assignableMember(u)))ticket.assigneeId=rule.assignToId;if(rule.moveToId&&state.columns.some(c=>c.id===rule.moveToId))ticket.status=rule.moveToId;notify(state,rule.notifyUserIds,rule.name,`${ticket.key}: ${ticket.title}`,'info',ticket.id,time);}}
 export function applyAction(state:WorkspaceState,user:Member,action:string,p:AnyData,time=iso()):{objectId:string;changes:unknown}{
   let objectId='workspace';let changes:unknown={};
   const has=(key:string)=>Object.prototype.hasOwnProperty.call(p,key);
@@ -169,12 +218,39 @@ export function applyAction(state:WorkspaceState,user:Member,action:string,p:Any
     case 'field.save':{admin(user);const existing=p.id?get(state.customFields,p.id,'Field'):null;const entry:CustomField=existing||{id:id('field'),name:'',type:'text',options:[],required:false};entry.name=str(p.name??entry.name,'Field name',60,true);if(has('type')){const type=choice(p.type,['text','number','date','select','checkbox'],'field type');if(existing&&existing.type!==type&&state.tickets.some(t=>Object.prototype.hasOwnProperty.call(t.customFields,existing.id)))fail('field_in_use','Create a new field to change a type already used by tickets.');entry.type=type;}if(has('options'))entry.options=strings(p.options,'Options',40);if(entry.type==='select'&&!entry.options.length)fail('invalid_input','A select field needs at least one option.');if(has('required'))entry.required=bool(p.required);if(!existing){if(state.customFields.length>=30)fail('capacity','The demo supports up to 30 custom fields.');state.customFields.push(entry);}objectId=entry.id;changes=entry;break;}
     case 'field.delete':{admin(user);const field=get(state.customFields,p.id,'Field');state.customFields=state.customFields.filter(f=>f.id!==field.id);state.tickets.forEach(t=>{delete t.customFields[field.id];});objectId=field.id;changes={name:field.name};break;}
     case 'member.invite':{
-      admin(user);if(state.users.length>=100)fail('capacity','The demo supports up to 100 members.');const email=str(p.email,'Email',250,true).toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.endsWith('.invalid'))fail('invalid_email','Enter a real member email address.');if(state.users.some(u=>u.email.toLowerCase()===email))fail('duplicate_member','A member with this email already exists.');
-      const entry:Member={id:id('member'),userId:null,name:str(p.name,'Name',100,true),email,role:choice(p.role||'employee',['admin','manager','employee'],'role'),active:true,color:'#54716a',jobTitle:str(p.jobTitle,'Job title',100),createdAt:time};state.users.push(entry);objectId=entry.id;changes={name:entry.name,email:entry.email,role:entry.role,invitationSent:false};break;
+      accountOwner(state,user);if(Object.keys(p).some(key=>!['name','email','jobTitle'].includes(key)))fail('invitation_field_not_allowed','Invite with a name, email and optional job title. Account roles are granted separately after approval.');
+      if(state.users.length>=100)fail('capacity','The demo supports up to 100 members.');const email=str(p.email,'Email',250,true).toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.endsWith('.invalid'))fail('invalid_email','Enter a real member email address.');if(state.users.some(u=>u.email.toLowerCase()===email&&!retiredAccount(u)))fail('duplicate_member','A current member or invitation already uses this email. Revoke that access before creating a separate replacement record.');
+      const entry:Member={id:id('member'),userId:null,name:str(p.name,'Name',120,true),email,role:'employee',active:false,color:'#54716a',jobTitle:str(p.jobTitle,'Job title',120),onboarding:newInvitation(user,time),createdAt:time};state.users.push(entry);objectId=entry.id;changes={after:accountEvidence(entry),invitationSent:false};break;
+    }
+    case 'member.approve':case 'member.revoke':case 'member.reinvite':{
+      accountOwner(state,user);if(Object.keys(p).some(key=>key!=='id'))fail('invitation_field_not_allowed','Choose the existing member only. Invitation state is managed by the server.');
+      const member=get(state.users,p.id,'Member');if(member.id==='owner')fail('owner_protected','The workspace owner cannot be revoked, reissued or replaced through member actions.');if(member.sample)fail('sample_account','Sample personas are for assignments only and cannot become login accounts.');
+      const before=structuredClone(accountEvidence(member));const onboarding=member.onboarding;const anchor=identityAnchor(member);
+      if(action==='member.approve'){
+        if(onboarding?.status!=='pending_approval'||!member.userId||member.active||!Number.isFinite(Date.parse(onboarding.acceptedAt||''))||Date.parse(onboarding.acceptedAt!)<Date.parse(onboarding.invitedAt)||Date.parse(onboarding.acceptedAt!)>Date.parse(time))fail('acceptance_required','The invited person must accept the current invitation before the owner can approve access.');
+        if(!invitationCurrent(onboarding,Date.parse(time)))fail('invitation_expired','The invitation expired. Reissue it and ask the person to accept again.',409);
+        if(anchor!==member.userId)fail('identity_continuity_required','This account does not match the identity originally bound to the member record.',403);
+        member.role='employee';member.active=true;member.onboarding={...onboarding!,status:'approved',approvedAt:time,approvedBy:user.id,identityAnchorUserId:anchor};
+      }else if(action==='member.reinvite'){
+        if(anchor===undefined)fail('identity_continuity_unknown','The previous account identity cannot be verified. Keep this record revoked and create a separate employee invitation.');
+        if(state.users.some(other=>other.id!==member.id&&other.email.toLowerCase()===member.email.toLowerCase()&&!retiredAccount(other)))fail('duplicate_member','Another current member or invitation uses this email. Revoke that account before reissuing this historical record.');
+        member.role='employee';member.active=false;member.userId=null;member.onboarding=newInvitation(user,time,anchor!);
+      }else{
+        member.role='employee';member.active=false;member.userId=null;
+        // A legacy account has no historical invitation to invent. The new
+        // revocation generation cannot be accepted and still records who revoked it.
+        const prior=onboarding||{invitationId:id('invitation'),invitedAt:'',invitedBy:'',expiresAt:''};
+        member.onboarding={status:'revoked',invitationId:prior.invitationId,invitedAt:prior.invitedAt,invitedBy:prior.invitedBy,expiresAt:prior.expiresAt,revokedAt:time,revokedBy:user.id,...(anchor!==undefined?{identityAnchorUserId:anchor}:{})};
+      }
+      objectId=member.id;changes={before,after:accountEvidence(member),...(action==='member.reinvite'?{invitationSent:false}:{})};break;
     }
     case 'member.update':{
-      admin(user);const member=get(state.users,p.id,'Member');const before={...profileDetails(member),role:member.role,active:member.active};const next={...member};if(has('name'))next.name=str(p.name,'Name',120,true);if(has('role'))next.role=choice(p.role,['admin','manager','employee'],'role');if(has('active'))next.active=bool(p.active);if(has('jobTitle'))next.jobTitle=str(p.jobTitle,'Job title',120);if(has('department'))next.department=str(p.department,'Department',80);if(has('workPhone'))next.workPhone=str(p.workPhone,'Work phone',40);if(has('location'))next.location=str(p.location,'Location',120);if(has('bio'))next.bio=str(p.bio,'Bio',600);next.profileUpdatedAt=time;
-      if(member.id===user.id&&(!next.active||next.role!=='admin'))fail('self_lockout','Another active administrator must change your own admin access.');if(next.role!=='admin'||!next.active){if(!state.users.some(u=>u.id!==member.id&&u.role==='admin'&&u.active&&!u.sample))fail('last_admin','Keep at least one active administrator.');}Object.assign(member,next);objectId=member.id;changes={before,after:{...profileDetails(member),role:member.role,active:member.active}};break;
+      admin(user);const accountKeys=Object.keys(p).filter(key=>key!=='id'&&!PROFILE_FIELDS.includes(key as typeof PROFILE_FIELDS[number]));if(accountKeys.length)accountOwner(state,user);
+      if(has('active'))fail('approval_workflow_required','Use owner approval or revocation to change account access.');if(accountKeys.some(key=>key!=='role'))fail('member_field_not_allowed','Member updates accept safe profile details and an owner-managed role only.');
+      const member=get(state.users,p.id,'Member');const before={...profileDetails(member),role:member.role,active:accountEnabled(member)};const next={...member};
+      if(has('role')){if(member.id==='owner')fail('owner_protected','The owner must retain active administrator access.');if(member.sample)fail('sample_account','Sample personas cannot become login accounts.');if(!accountEnabled(member))fail('approval_required','Approve the accepted invitation before granting an account role.');next.role=choice(p.role,['admin','manager','employee'],'role');}
+      if(has('name'))next.name=str(p.name,'Name',120,true);if(has('jobTitle'))next.jobTitle=str(p.jobTitle,'Job title',120);if(has('department'))next.department=str(p.department,'Department',80);if(has('workPhone'))next.workPhone=str(p.workPhone,'Work phone',40);if(has('location'))next.location=str(p.location,'Location',120);if(has('bio'))next.bio=str(p.bio,'Bio',600);if(PROFILE_FIELDS.some(has))next.profileUpdatedAt=time;
+      Object.assign(member,next);objectId=member.id;changes={before,after:{...profileDetails(member),role:member.role,active:accountEnabled(member)}};break;
     }
     case 'rule.save':{
       admin(user);const existing=p.id?get(state.rules,p.id,'Rule'):null;const entry:AutomationRule=existing||{id:id('rule'),name:'',enabled:true,trigger:'ticket.created',priority:'any',assignToId:null,moveToId:null,notifyUserIds:[]};entry.name=str(p.name??entry.name,'Rule name',100,true);if(has('enabled'))entry.enabled=bool(p.enabled);if(has('trigger'))entry.trigger=choice(p.trigger,['ticket.created','ticket.updated'],'trigger');if(has('priority'))entry.priority=choice(p.priority,['any','critical','high','medium','low'],'priority');if(has('assignToId'))entry.assignToId=activeUser(state,p.assignToId,true);if(has('moveToId'))entry.moveToId=p.moveToId?get(state.columns,p.moveToId,'Column').id:null;if(has('notifyUserIds'))entry.notifyUserIds=mentions(state,p.notifyUserIds);if(!existing){if(state.rules.length>=30)fail('capacity','The demo supports up to 30 automation rules.');state.rules.push(entry);}objectId=entry.id;changes=entry;break;
@@ -202,24 +278,56 @@ async function save(state:WorkspaceState,old:Stored|null,user:Member,action:stri
   const auditWrite=database.prepare('INSERT INTO audit_events(id,sequence,timestamp,actor_id,actor_name,action,object_id,request_id,changes,previous_hash,hash) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM workspace WHERE id=? AND revision=? AND last_hash=?)').bind(eventBase.id,revision,timestamp,user.id,user.name,action,objectId,requestId,JSON.stringify(changes),previousHash,hash,'main',revision,hash);
   const results=await database.batch([write,auditWrite]);if(results[0].meta.changes!==1)fail('revision_conflict','Someone changed the workspace. Reload it and try again.',409);if(results[1].meta.changes!==1)throw new ApiError(500,'audit_write_failed','The change could not be recorded.');return revision;
 }
-export async function mutateWorkspace(request:Request){
-  validateWriteOrigin(request);const identity=requestIdentity(request);if(Number(request.headers.get('content-length')||0)>65536)fail('body_too_large','The request is too large.',413);
-  const text=await request.text();if(new TextEncoder().encode(text).length>65536)fail('body_too_large','The request is too large.',413);let input:AnyData;try{input=JSON.parse(text);}catch{fail('invalid_json','The request is not valid JSON.');}if(!input!||typeof input!=='object'||Array.isArray(input))fail('invalid_json','Send an action object.');
-  const action=str(input!.action,'Action',80,true);const payload=input!.payload??{};if(!payload||typeof payload!=='object'||Array.isArray(payload))fail('invalid_input','Action payload must be an object.');if(!Number.isSafeInteger(input!.revision)||Number(input!.revision)<0)fail('invalid_revision','A current workspace revision is required.');
-  const record=await load();if((record?.revision||0)!==input!.revision)fail('revision_conflict','Someone changed the workspace. Reload it and try again.',409);
-  if(!record){if(!bootstrapAllowed(identity))fail('membership_required','This workspace is not enabled for your account.',403);if(action!=='demo.initialize')fail('setup_required','Initialize the review workspace first.',409);const owner=bootstrapMember(identity);const state=demoState(owner);const revision=await save(state,null,owner,action,'workspace',{sampleData:true,ticketCount:state.tickets.length},request);return responseFor(state,owner,revision);}
-  if(action==='demo.initialize')fail('already_initialized','The demo has already been initialized. Existing records are preserved.',409);
-  const state=JSON.parse(record.payload) as WorkspaceState;const user=memberFor(state,identity);let bound=false;if(!user.userId){user.userId=identity.userId;bound=true;}
-  const change=applyAction(state,user,action,payload as AnyData);const revision=await save(state,record,user,action,change.objectId,bound?{change:change.changes,identityBound:true}:change.changes,request);return responseFor(state,user,revision);
+async function acceptInvitation(request:Request,identity:Identity,record:Stored|null,payload:AnyData):Promise<OnboardingResponse>{
+  if(Object.keys(payload).some(key=>key!=='invitationId'))fail('invitation_field_not_allowed','Accept the invitation shown for your signed-in account only.');
+  const invitationId=str(payload.invitationId,'Invitation',100,true);
+  if(!record)fail('invitation_required','The owner must invite your signed-in email before you can request access.',403);
+  const state=JSON.parse(record!.payload) as WorkspaceState;const member=ownInvitation(state,identity);const onboarding=member?.onboarding;
+  if(!member||member.id==='owner'||member.sample||member.email.toLowerCase()!==identity.email||!identityCanBind(member,identity.userId)||!onboarding||onboarding.invitationId!==invitationId)fail('invitation_required','This invitation is not available for your signed-in account. Ask the owner for the current invitation.',403);
+  if(onboarding!.status==='approved'&&member!.userId===identity.userId&&accountEnabled(member!))return onboardingFor(member,identity);
+  if(onboarding!.status!=='invited'&&onboarding!.status!=='pending_approval')fail('invitation_unavailable','This invitation is no longer available. Ask the owner to reissue it.',403);
+  const time=iso();if(!invitationCurrent(onboarding,Date.parse(time)))fail('invitation_expired','The invitation expired. Ask the owner to reissue it.',409);
+  if(onboarding!.status==='pending_approval'){
+    if(member!.userId!==identity.userId||member!.active)fail('invitation_unavailable','This invitation is no longer available for this account.',403);
+    return onboardingFor(member,identity);
+  }
+  if(member!.userId||member!.active||state.users.some(other=>other.id!==member!.id&&other.userId===identity.userId))fail('invitation_unavailable','This invitation is no longer available for this account.',403);
+  const before=structuredClone(accountEvidence(member!));member!.userId=identity.userId;member!.role='employee';member!.active=false;member!.onboarding={...onboarding!,status:'pending_approval',acceptedAt:time,identityAnchorUserId:identity.userId};
+  await save(state,record!,member!,'invitation.accept',member!.id,{before,after:accountEvidence(member!)},request);
+  return onboardingFor(member,identity);
+}
+export async function mutateWorkspace(request:Request):Promise<WorkspaceResponse|OnboardingResponse>{
+  validateWriteOrigin(request);const identity=requestIdentity(request);
+  const bytes=await boundedBody(request,65536);let input:AnyData;try{input=JSON.parse(new TextDecoder().decode(bytes));}catch{fail('invalid_json','The request is not valid JSON.');}if(!input!||typeof input!=='object'||Array.isArray(input))fail('invalid_json','Send an action object.');
+  const action=str(input!.action,'Action',80,true);const payload=input!.payload??{};if(!payload||typeof payload!=='object'||Array.isArray(payload))fail('invalid_input','Action payload must be an object.');
+  const record=await load();if(action==='invitation.accept')return acceptInvitation(request,identity,record,payload as AnyData);
+  if(!record){if(!bootstrapAllowed(identity))fail('membership_required','This workspace is not enabled for your account.',403);requireRevision(input!.revision,0);if(action!=='demo.initialize'&&action!=='workspace.initialize')fail('setup_required','Initialize the workspace first.',409);const owner=bootstrapMember(identity);const sampleData=action==='demo.initialize';const state=sampleData?demoState(owner):emptyState(owner);state.settings.demo=sampleData;const revision=await save(state,null,owner,action,'workspace',{sampleData,ticketCount:state.tickets.length},request);return responseFor(state,owner,revision);}
+  const state=JSON.parse(record.payload) as WorkspaceState;const user=memberFor(state,identity);
+  // Check membership before reporting revision conflicts: pending or uninvited
+  // identities cannot use writes as an oracle for the private workspace revision.
+  requireRevision(input!.revision,record.revision);
+  if(action==='demo.initialize'||action==='workspace.initialize')fail('already_initialized','The workspace has already been initialized. Existing records are preserved.',409);
+  const change=applyAction(state,user,action,payload as AnyData);const revision=await save(state,record,user,action,change.objectId,change.changes,request);return responseFor(state,user,revision);
 }
 export async function readAudit(request:Request){
   const identity=requestIdentity(request);const record=await load();if(!record){if(!bootstrapAllowed(identity))fail('admin_required','Administrator access is required.',403);return {audit:[],chainValid:true,chainScope:'complete',total:0,headHash:'GENESIS',exportedAt:iso()};}
   const state=JSON.parse(record.payload) as WorkspaceState;const user=memberFor(state,identity);admin(user);
-  const rows=await db().prepare('SELECT id,sequence,timestamp,actor_id,actor_name,action,object_id,request_id,changes,previous_hash,hash FROM audit_events ORDER BY sequence ASC LIMIT 10001').all<Record<string,unknown>>();
-  if(rows.results.length>10000)fail('export_too_large','The audit exceeds the bounded demo export. Use an administrator database backup for the complete record.',413);
+  // D1 batches execute transactionally: the head and rows must come from one
+  // snapshot, or a legitimate concurrent write could look like tampering.
+  const database=db();const snapshot=await database.batch<Record<string,unknown>>([
+    database.prepare('SELECT id,payload,revision,last_hash,updated_at FROM workspace WHERE id = ?').bind('main'),
+    database.prepare(`SELECT COUNT(*) AS total,${AUDIT_BYTES_SQL} AS bytes FROM audit_events`),
+    database.prepare(`SELECT id,sequence,timestamp,actor_id,actor_name,action,object_id,request_id,changes,previous_hash,hash FROM audit_events WHERE (SELECT COUNT(*) <= ? AND ${AUDIT_BYTES_SQL} <= ? FROM audit_events) ORDER BY sequence ASC LIMIT ?`).bind(MAX_AUDIT_EXPORT_ROWS,MAX_AUDIT_EXPORT_BYTES,MAX_AUDIT_EXPORT_ROWS+1),
+  ]);
+  const auditRecord=snapshot[0].results[0] as unknown as Stored|undefined;
+  if(!auditRecord)fail('revision_conflict','The workspace changed. Reload it and try again.',409);
+  // Access may have been revoked after the inexpensive initial check.
+  admin(memberFor(JSON.parse(auditRecord!.payload) as WorkspaceState,identity));
+  const totals=snapshot[1].results[0];const rows=snapshot[2];
+  if(Number(totals.total)>MAX_AUDIT_EXPORT_ROWS||Number(totals.bytes)>MAX_AUDIT_EXPORT_BYTES||rows.results.length>MAX_AUDIT_EXPORT_ROWS)fail('export_too_large','The audit exceeds the safe export limit of 10,000 events or 8 MiB of stored event data. Use a protected administrator database backup for the complete record.',413);
   const audit:AuditEntry[]=rows.results.map(r=>({id:String(r.id),sequence:Number(r.sequence),timestamp:String(r.timestamp),actorId:String(r.actor_id),actorName:String(r.actor_name),action:String(r.action),objectId:String(r.object_id),requestId:String(r.request_id),changes:JSON.parse(String(r.changes)),previousHash:String(r.previous_hash),hash:String(r.hash)}));
-  let valid=true;let previous='GENESIS';let sequence=1;for(const event of audit){const {hash,...base}=event;if(event.previousHash!==previous||event.sequence!==sequence||await digest(base)!==hash)valid=false;previous=hash;sequence++;}if(previous!==record.last_hash||audit.length!==record.revision)valid=false;
-  return {audit:audit.slice().reverse(),chainValid:valid,chainScope:'complete',total:audit.length,headHash:record.last_hash,exportedAt:iso(),integrityNote:'Hash chaining detects changes when compared with a trusted exported head. Database administrators can rewrite both data and hashes; export and retain independent signed evidence for forensic use.'};
+  let valid=true;let previous='GENESIS';let sequence=1;for(const event of audit){const {hash,...base}=event;if(event.previousHash!==previous||event.sequence!==sequence||await digest(base)!==hash)valid=false;previous=hash;sequence++;}if(previous!==auditRecord!.last_hash||audit.length!==auditRecord!.revision)valid=false;
+  return {audit:audit.slice().reverse(),chainValid:valid,chainScope:'complete',total:audit.length,headHash:auditRecord!.last_hash,exportedAt:iso(),integrityNote:'Hash chaining detects changes when compared with a trusted exported head. Database administrators can rewrite both data and hashes; export and retain independent signed evidence for forensic use.'};
 }
 
 function photoBucket():R2Bucket{if(!env.BUCKET)fail('photo_storage_unavailable','Profile photo storage is not configured.',503);return env.BUCKET!;}
@@ -242,10 +350,10 @@ async function profileContext(request:Request){
 }
 async function boundedBody(request:Request,maximum:number):Promise<Uint8Array>{
   const declared=request.headers.get('content-length');
-  if(declared&&(!/^\d+$/.test(declared)||Number(declared)>maximum))fail('body_too_large','The upload request is too large.',413);
+  if(declared&&(!/^\d+$/.test(declared)||Number(declared)>maximum))fail('body_too_large','The request is too large.',413);
   if(!request.body)fail('empty_body','The request body is empty.');
   const reader=request.body!.getReader();const chunks:Uint8Array[]=[];let length=0;
-  while(true){const {done,value}=await reader.read();if(done)break;length+=value.byteLength;if(length>maximum){await reader.cancel();fail('body_too_large','The upload request is too large.',413);}chunks.push(value);}
+  while(true){const {done,value}=await reader.read();if(done)break;length+=value.byteLength;if(length>maximum){await reader.cancel();fail('body_too_large','The request is too large.',413);}chunks.push(value);}
   const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}return bytes;
 }
 function imageDimensions(width:number,height:number){
@@ -315,7 +423,7 @@ export function inspectProfilePhoto(bytes:Uint8Array,mime:string):{contentType:P
 }
 async function cleanupPhoto(bucket:R2Bucket,key:string){try{await bucket.delete(key);}catch{console.warn('Profile photo object cleanup requires a later storage check.');}}
 export async function uploadProfilePhoto(request:Request):Promise<WorkspaceResponse>{
-  validateSameOrigin(request);const {identity,record,state,user}=await profileContext(request);
+  validateSameOrigin(request);const {record,state,user}=await profileContext(request);
   const contentType=request.headers.get('content-type')||'';
   if(!/^multipart\/form-data\s*;/i.test(contentType)||!contentType.toLowerCase().includes('boundary='))fail('multipart_required','Upload a file using multipart form data.',415);
   const bytes=await boundedBody(request,MAX_PHOTO_REQUEST_BYTES);let form:FormData;
@@ -332,9 +440,9 @@ export async function uploadProfilePhoto(request:Request):Promise<WorkspaceRespo
   try{
     const stored=await bucket.put(key,imageBytes,{httpMetadata:{contentType:photo.contentType,cacheControl:'private, no-store'},customMetadata:{memberId:target.id,sha256}});
     if(!stored)fail('photo_storage_unavailable','The profile photo could not be stored. Please try again.',503);
-    target._profilePhoto=photo;target.profileUpdatedAt=uploadedAt;const identityBound=!user.userId;if(identityBound)user.userId=identity.userId;
+    target._profilePhoto=photo;target.profileUpdatedAt=uploadedAt;
     commitAttempted=true;
-    const revision=await save(state,record,user,'profile.photo.upload',target.id,{before:photoEvidence(previous),after:photoEvidence(photo),identityBound},request);
+    const revision=await save(state,record,user,'profile.photo.upload',target.id,{before:photoEvidence(previous),after:photoEvidence(photo)},request);
     if(previous?.key&&previous.key!==key)await cleanupPhoto(bucket,previous.key);
     return responseFor(state,user,revision);
   }catch(error){
@@ -346,18 +454,18 @@ export async function uploadProfilePhoto(request:Request):Promise<WorkspaceRespo
   }
 }
 export async function removeProfilePhoto(request:Request):Promise<WorkspaceResponse>{
-  validateWriteOrigin(request);const {identity,record,state,user}=await profileContext(request);const bytes=await boundedBody(request,4096);let input:AnyData;
+  validateWriteOrigin(request);const {record,state,user}=await profileContext(request);const bytes=await boundedBody(request,4096);let input:AnyData;
   try{input=JSON.parse(new TextDecoder().decode(bytes));}catch{fail('invalid_json','Send the member and current revision as JSON.');}
   if(!input!||typeof input!=='object'||Array.isArray(input)||Object.keys(input!).some(key=>!['memberId','revision'].includes(key)))fail('invalid_input','Send the member and current revision only.');
   requireRevision(input!.revision,record.revision);const target=photoTarget(state,user,input!.memberId);const previous=target._profilePhoto;
   if(!previous)return responseFor(state,user,record.revision);
-  const bucket=photoBucket();delete target._profilePhoto;target.profileUpdatedAt=iso();const identityBound=!user.userId;if(identityBound)user.userId=identity.userId;
-  const revision=await save(state,record,user,'profile.photo.remove',target.id,{before:photoEvidence(previous),after:null,identityBound},request);
+  const bucket=photoBucket();delete target._profilePhoto;target.profileUpdatedAt=iso();
+  const revision=await save(state,record,user,'profile.photo.remove',target.id,{before:photoEvidence(previous),after:null},request);
   await cleanupPhoto(bucket,previous.key);return responseFor(state,user,revision);
 }
 export async function readProfilePhoto(request:Request):Promise<Response>{
   const {state,user}=await profileContext(request);const memberId=new URL(request.url).searchParams.get('memberId')||user.id;const member=get(state.users,memberId,'Member') as StoredMember;
-  if(!member.active&&user.role!=='admin')fail('photo_not_found','The profile photo is unavailable.',404);
+  if(!accountEnabled(member)&&user.role!=='admin')fail('photo_not_found','The profile photo is unavailable.',404);
   const photo=member._profilePhoto;if(!photo?.key||!photo.key.startsWith(`profile-photos/${encodeURIComponent(member.id)}/`))return fail('photo_not_found','This member has not added a profile photo.',404);
   const stored=await photoBucket().get(photo.key);if(!stored)return fail('photo_not_found','The profile photo is unavailable.',404);
   return new Response(stored.body,{headers:{'Content-Type':photo.contentType,'Content-Length':String(stored.size),'Content-Disposition':`inline; filename="profile-photo.${photo.contentType==='image/jpeg'?'jpg':photo.contentType==='image/png'?'png':'webp'}"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin','Content-Security-Policy':"default-src 'none'; sandbox",'Vary':'Cookie'}});

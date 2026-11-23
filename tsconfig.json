@@ -42,6 +42,7 @@
   ],
   "exclude": [
     "node_modules",
+    ".hostinger-app",
     "examples",
     "dist",
     ".vinext",
