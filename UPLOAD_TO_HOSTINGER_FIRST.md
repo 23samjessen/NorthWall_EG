@@ -5,8 +5,11 @@ This is the complete source project, including the website and employee workspac
 1. Open **Deploy Your Web App**.
 2. Choose **Connect with GitHub** and `23samjessen/NorthWall_EG`, or **Upload your files** and the supplied ZIP.
 3. Select **Other**, **Node 24**, **npm**, root **`.`**, build **`npm run build:hostinger`**, output **`.hostinger-app`**, entry **`hostinger/server.mjs`**. If asked for a start command, use **`npm run start:hostinger`**.
-4. Configure a MySQL database, a sending mailbox and the private settings in `hostinger/.env.example`.
-5. Follow `docs/HOSTINGER_AND_DOMAIN.md` for HTTPS, schema setup, hidden-prompt owner provisioning and the first sign-in test.
+4. Create the MySQL database and sending mailbox. Attach the intended domain, enable its certificate and **Force HTTPS**, then verify the certificate and HTTP-to-HTTPS redirect. Only after that verification set `EDGE_HTTPS_CONFIRMED=true` with the other private settings from `hostinger/.env.example`.
+5. Open the uploaded or cloned source in a **private Node application terminal/SSH session**, from the directory containing `package.json`. Follow `docs/HOSTINGER_AND_DOMAIN.md` to run schema setup, the hidden-prompt owner provisioning and preflight **before a successful Node startup**.
+6. Deploy or redeploy with the settings above, then test the first sign-in and email-code delivery. If the importer attempts to start the app before setup is complete, finish the prerequisites through the private terminal and **redeploy**. The server does not create its database tables or owner account automatically at startup.
+
+**Hostinger setup is still pending.** The supplied ZIP contains the source; uploading it alone does not configure MySQL, SMTP, HTTPS or the owner account. Use the Node deployment workflow to make the source available to its application terminal/SSH session. Keep private environment files outside the project and all public/deployment directories.
 
 Keep `PUBLIC_LAUNCH=false` until registration and your launch decision. The owner username is **23samjessen@gmail.com**. No actual password, SMTP credential or database credential is included. Enter the temporary owner password privately during setup; email verification and password replacement are required before workspace access.
 

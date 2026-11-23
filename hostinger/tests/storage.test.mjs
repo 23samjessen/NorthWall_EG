@@ -16,6 +16,10 @@ function fixture(handler = () => undefined, options = {}) {
   let connectionId = 0;
   const execute = async (sql, values = [], scope = 'pool') => {
     events.push({type:'execute', sql, values, scope});
+    // MySQL rejects diagnostic statements in the prepared-statement protocol.
+    // Model that distinction so the duplicate-initialization path cannot pass
+    // against a fixture while failing on an actual MySQL connection.
+    if (sql === 'SHOW WARNINGS') throw Object.assign(new Error('Diagnostic statements cannot be prepared.'), {code:'ER_UNSUPPORTED_PS', errno:1295});
     const response = await handler(sql, values, scope);
     return [response ?? (/^SELECT|^SHOW/.test(sql) ? [] : {affectedRows:1, warningStatus:0}), []];
   };
@@ -27,7 +31,10 @@ function fixture(handler = () => undefined, options = {}) {
       events.push({type:'borrow', scope});
       return {
         execute:(sql, values) => execute(sql, values, scope),
-        async query(sql) { events.push({type:'control', sql, scope}); return [[], []]; },
+        async query(sql) {
+          events.push({type:sql === 'SHOW WARNINGS' ? 'diagnostic' : 'control', sql, scope});
+          return [sql === 'SHOW WARNINGS' ? await handler(sql, [], scope) ?? [] : [], []];
+        },
         async commit() { events.push({type:'commit', scope}); },
         async rollback() { events.push({type:'rollback', scope}); },
         release() { events.push({type:'release', scope}); },
@@ -121,12 +128,17 @@ test('database errors roll back both writes and do not expose driver SQL or cred
   assert.equal(f.events.at(-1).type, 'release');
 });
 
-test('INSERT IGNORE tolerates only duplicate-key no-insert warnings and rejects lossy writes', async () => {
+test('INSERT IGNORE reads diagnostics without preparing them, tolerates only duplicate-key no-insert warnings and rejects lossy writes', async () => {
   for (const warning of [1062, 1265]) {
     const f = fixture(sql => sql === 'SHOW WARNINGS' ? [{Code:warning, Message:'private diagnostic'}] : {affectedRows:0, warningStatus:sql.startsWith('INSERT IGNORE') ? 1 : 0});
     const batch = [f.DB.prepare(WORKSPACE_SQL.initialize).bind('main', '{}', 1, hash, time), f.DB.prepare(WORKSPACE_SQL.auditInsert).bind(...auditValues)];
     if (warning === 1062) assert.deepEqual((await f.DB.batch(batch)).map(result => result.meta.changes), [0, 0]);
     else { await assert.rejects(f.DB.batch(batch), code('database_write_warning')); assert.ok(f.events.some(event => event.type === 'rollback')); }
+    const diagnostic = f.events.filter(event => event.type === 'diagnostic');
+    assert.equal(diagnostic.length, 1);
+    assert.equal(diagnostic[0].sql, 'SHOW WARNINGS');
+    assert.equal(diagnostic[0].scope, f.events.find(event => event.sql?.startsWith('INSERT IGNORE')).scope);
+    assert.ok(!f.events.some(event => event.type === 'execute' && event.sql === 'SHOW WARNINGS'));
   }
 });
 

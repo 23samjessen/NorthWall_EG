@@ -45,6 +45,14 @@ Configure an actual sending mailbox. **Your Hostinger login email is not automat
 
 Hostinger replaces deployment directories during redeployment. Records and private portraits are therefore stored in MySQL. Do not keep live uploads, SQLite databases, credentials or backups in public_html, hbuilds or .hostinger-app. [1]
 
+### Verify HTTPS before running setup
+
+Attach the intended domain, enable its valid certificate and **Force HTTPS**, then verify that HTTP redirects to HTTPS and the certificate is valid. This can be checked while Hostinger's placeholder is still displayed; the NorthWallEg server does not need to be running for the hosting-level check. The app adds HSTS but cannot issue or renew certificates. [5]
+
+Only after that verification set **EDGE_HTTPS_CONFIRMED=true**. Setup, preflight and server startup all read this setting and refuse to proceed while it is false or missing. Complete this hosting step before the commands in section 4.
+
+The application uses a fixed canonical origin and ignores visitor-selected proxy/identity headers. Hostinger warns that forwarding headers can be forged outside its trusted CDN path. [5]
+
 ## 3. Private environment settings
 
 Use Hostinger's **Environment Variables** settings. The blank template is hostinger/.env.example. Never commit actual values, include them in the ZIP or show them in screenshots.
@@ -79,7 +87,11 @@ APP_ORIGIN and PUBLIC_LAUNCH must match the build manifest; rebuild after changi
 
 ## 4. Initialize storage and provision the owner
 
-Use a private application terminal/SSH session with Node 24 and the same server environment settings. If those are not supplied to the terminal automatically, load a private environment file outside all public/deployment directories. Do not put that file in the project.
+Open the uploaded or cloned project through a **private Node application terminal/SSH session** with Node 24. Work from the application source directory containing package.json. File Manager's public_html view is not a terminal and does not run these commands. Keep the same private configuration as the managed application, including the HTTPS confirmation completed above.
+
+The source must be available in that private application environment before provisioning. If Hostinger's importer automatically builds and attempts a start before you can run setup, that first start cannot succeed against an empty database. Obtain terminal/SSH access to the source, complete this section and preflight, then **redeploy**. The server checks its existing tables before listening; it does not automatically create tables or an owner during startup.
+
+Hostinger's application environment settings may not be supplied to an SSH shell automatically. If needed, use a private environment file outside the project and all public/deployment directories; never include it in the ZIP.
 
 From the directory containing package.json:
 
@@ -87,6 +99,14 @@ From the directory containing package.json:
 npm ci
 npm run hostinger:setup
 ```
+
+If your SSH shell does not already have the application settings, replace the example path below with your actual private environment-file path and use Node's environment-file option for setup:
+
+```bash
+node --env-file=/absolute/private/path/northwalleg.env hostinger/setup.mjs
+```
+
+Use the same method for preflight when required: `node --env-file=/absolute/private/path/northwalleg.env hostinger/check.mjs --smtp`. Hostinger's managed application still needs its settings in the dashboard separately.
 
 Setup creates missing tables without replacing records. It asks for a temporary owner password and confirmation **with terminal input hidden**. The password supplied in chat is deliberately absent from source and the archive and has not been set remotely. Enter it only through this private setup prompt. A temporary credential expires after 24 hours.
 
@@ -103,18 +123,18 @@ Explicit owner recovery: `npm run hostinger:setup -- --recover-owner`. This chan
 
 For an imported verified workspace, setup checks and preserves its existing owner identity. Historical non-owner identities require reviewed migration mapping. Public email enrollment cannot claim their old IDs or private history.
 
-## 5. Preflight, HTTPS and deployment
+## 5. Preflight and deployment
 
 ```bash
 npm run hostinger:check
 npm run hostinger:check -- --smtp
-npm run build:hostinger
-npm run start:hostinger
 ```
 
-Preflight checks configuration, tables, packet capacity and owner provisioning. The optional SMTP check authenticates to the mailbox without sending email; real sign-in is still needed to test delivery. Hostinger normally runs build/start after the deployment settings are complete.
+Preflight checks configuration, tables, packet capacity and owner provisioning. The optional SMTP check authenticates to the mailbox without sending email; real sign-in is still needed to test delivery.
 
-Enable a valid domain certificate and **Force HTTPS**. Verify HTTP redirects to HTTPS and the certificate is valid. The app adds HSTS but cannot issue or renew certificates. It uses a fixed canonical origin and ignores visitor-selected proxy/identity headers; Hostinger warns that forwarding headers can be forged outside its trusted CDN path. [5]
+Once HTTPS verification, private settings, schema creation, owner provisioning and preflight are complete, choose **Deploy** or **Redeploy** in Hostinger. Keep the section 1 build command `npm run build:hostinger`, entry `hostinger/server.mjs` and start command `npm run start:hostinger`. Hostinger runs the build and manages the server process; a second server does not need to be started from SSH.
+
+If an earlier start failed because these prerequisites were missing, redeploy after completing them. A successful source upload or build alone does not confirm that the server, database or email delivery is working. **Actual setup and deployment in your Hostinger account remain pending.**
 
 | Intended page | URL |
 | --- | --- |

@@ -81,7 +81,10 @@ function validateParameters(entry, values) {
 }
 async function checkWarnings(connection, header, kind) {
   if (!header?.warningStatus) return;
-  const [warnings] = await connection.execute('SHOW WARNINGS');
+  // MySQL diagnostic statements cannot be prepared. Keep this fixed,
+  // parameter-free query on the same connection so it reads this write's
+  // diagnostics without an intervening PREPARE clearing/replacing them.
+  const [warnings] = await connection.query('SHOW WARNINGS');
   // INSERT IGNORE also suppresses truncation and invalid values. Only its
   // duplicate-key/no-insert case is an expected workspace revision conflict.
   if (kind === 'initialize' && Number(header.affectedRows) === 0 && Array.isArray(warnings) && warnings.length && warnings.every(warning => Number(warning.Code ?? warning.code) === 1062)) return;
