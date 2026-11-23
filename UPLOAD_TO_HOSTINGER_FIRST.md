@@ -1,6 +1,6 @@
 # Start here: upload NorthWallEg to Hostinger
 
-This is the complete source project, including the website and employee workspace. Use Hostinger's **Node.js web-app deployment**. Uploading its source into a PHP/HTML `public_html` folder does not start the server.
+This is the complete source project, including the website and employee workspace. The corrected **Hostinger upload ZIP** includes `START_HERE_HOSTINGER.md` and selects the Node builder with ordinary `npm run build` and `npm start`. Use its exact settings. If working from Git source, generate that profile with `npm run hostinger:package -- --output /absolute/path/NorthWallEg-Hostinger-Upload.zip`; the repository keeps its separate Sites preview default. Use Hostinger's **Node.js web-app deployment**. Uploading its source into a PHP/HTML `public_html` folder does not start the server.
 
 1. Open **Deploy Your Web App**.
 2. Choose **Connect with GitHub** and `23samjessen/NorthWall_EG`, or **Upload your files** and the supplied ZIP.

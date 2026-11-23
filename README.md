@@ -179,3 +179,7 @@ npm run start:hostinger
 ```
 
 Setup requires private environment settings and a private terminal for the hidden owner-password prompt. Do not run setup against an unrelated database. The default owner username is **23samjessen@gmail.com**; no actual credential is shipped. `PUBLIC_LAUNCH=false` keeps the destination behind sign-in until the owner decides to launch. See the hosting guide before using these commands.
+
+## Corrected Hostinger upload ZIP
+
+Run `npm run hostinger:package -- --output /absolute/path/NorthWallEg-Hostinger-Upload.zip` to create the Hostinger-specific upload profile. It sets the exported default `build` and `start` scripts to the Node target, includes build dependencies even with `NODE_ENV=production`, and adds `START_HERE_HOSTINGER.md`. Choose **Other** in Hostinger with output `.hostinger-app` and entry `hostinger/server.mjs`. The repository retains its Sites preview default; source download and deployable upload profile are deliberately distinguished. No real credentials or runtime records are exported.

@@ -12,6 +12,8 @@ Your screenshot showing **Coming soon** is Hostinger's placeholder. Your File Ma
 
 ## 1. Application and build settings
 
+**Corrected upload profile:** `hostinger/package-upload.py` exports a flat ZIP whose default build/start scripts call the Hostinger target directly. It includes `START_HERE_HOSTINGER.md` and `.npmrc` installation guards. In that ZIP, `npm run build` and `npm start` are equivalent to the explicit Hostinger commands in the table below. The exported profile still requires **Other**; selecting the Next.js preset would bypass the custom entry. `NORTHWALL_RUNTIME` is optional for this profile.
+
 Connect the existing repository directly and grant access only to 23samjessen/NorthWall_EG if GitHub offers repository selection. The supplied source ZIP is an alternative, with package.json at its root. Do not upload node_modules, private environment files or generated builds.
 
 | Hostinger setting | Value |

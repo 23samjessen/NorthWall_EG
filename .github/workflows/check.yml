@@ -46,8 +46,15 @@ jobs:
           NW_AUTH_TEST_DB_PASSWORD: ci-fixture-only
       - run: npm run audit:dependencies
       - run: npm run build
-      - run: npm run build:hostinger
+      - name: Build and verify the actual Hostinger upload profile
+        run: |
+          python3 hostinger/package-upload.py --output "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip"
+          mkdir "$RUNNER_TEMP/northwall-upload-check"
+          unzip -q "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip" -d "$RUNNER_TEMP/northwall-upload-check"
+          cd "$RUNNER_TEMP/northwall-upload-check"
+          NODE_ENV=production npm ci
+          env -u NORTHWALL_RUNTIME npm run build
+          env -u NORTHWALL_RUNTIME npm run test:hostinger-render
         env:
           APP_ORIGIN: https://northwallegy.com
           PUBLIC_LAUNCH: 'false'
-      - run: npm run test:hostinger-render
