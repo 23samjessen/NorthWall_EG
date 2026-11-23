@@ -2,7 +2,7 @@
 
 ## Current status: implemented Hostinger code, deployment still pending
 
-The standalone Hostinger service is implemented in `hostinger/auth/`; **32 local authentication tests pass** using the real state machine, transactional test storage and fake email delivery. The opt-in MySQL integration test exercises the real storage adapter and invitation row locks when a dedicated empty test database is provided.
+The standalone Hostinger service is implemented in `hostinger/auth/`; **32 local authentication tests pass** using the real state machine, transactional test storage and fake email delivery. All five real-MySQL authentication scenarios also passed in [GitHub Actions run 45096520691](https://github.com/23samjessen/NorthWall_EG/actions/runs/45096520691), using a dedicated empty database and fake delivery. This verifies the storage adapter and invitation row locks, not a real mailbox.
 The current private Sites demo still uses its existing hosting identity gateway. Its login has not been replaced by the Hostinger service.
 Real Hostinger database setup, SMTP configuration, account provisioning and delivery verification have **not** been completed. No real authentication emails have been sent, and no supplied temporary password is stored in this repository, archive or documentation.
 Follow [HOSTINGER_AND_DOMAIN.md](HOSTINGER_AND_DOMAIN.md) for exact deployment settings and setup steps; keep the review Site private until the deployment checks are complete.
@@ -69,7 +69,7 @@ The cleanup function removes expired challenges, sessions and rate buckets in bo
 ## Validation and launch gate
 
 Run `node --test hostinger/tests/auth.test.mjs` for the 32 local cases. They cover all gates, temporary expiry, concurrent code replay, stale invitations, revocation, session expiry, transaction/provider failure and rate-limit persistence.
-`hostinger/tests/auth.mysql.test.mjs` is opt-in and refuses any non-local, non-dedicated or non-empty test database. Its local skip is **not** a passed real-engine test; verify the actual MySQL CI result before release.
+`hostinger/tests/auth.mysql.test.mjs` is opt-in and refuses any non-local, non-dedicated or non-empty test database. A local skip is **not** a passed real-engine test. The observed real-engine success is recorded for the exact CI revision in VERIFICATION.md.
 Before enabling production access, verify real HTTPS/proxy behavior, real MySQL transactions, authorized test-email delivery, owner provisioning, invitation acceptance/approval, logout and recovery procedures. Do not describe the current private Sites demo as running this Hostinger login.
 
 ## References
