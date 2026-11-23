@@ -116,7 +116,7 @@ The backend prevents an administrator from suspending or demoting their own acco
 
 ### Public people and private employee profiles
 
-The public **Our team** section is configured in `lib/company-profile.json`. Pernille Jessen is listed as **CEO & IoT Engineer**, and Sam Jessen as **Network & Cybersecurity Engineer**. Their public images are labelled monogram placeholders until photographs are supplied. This content does not create logins or grant roles. Pernille has no supplied sign-in email in this configuration.
+The compact public people cards under **Contact** are configured in `lib/company-profile.json`. Pernille Jessen's first title is **CEO**, with **IoT Engineer** in the details. Sam Jessen's first title is **Country Manager — Egypt**, with **Network & Cybersecurity Engineer** in the details. Their images are labelled monogram placeholders until photographs are supplied. Optional personal contact fields stay blank until approved. This content does not create logins or grant roles. Pernille has no supplied sign-in email in this configuration.
 
 An employee opens **My profile** to update their display name, job title, department, work phone, location and biography. Display name and job title are required when saving profile details. A complete profile has a job title and one photograph. The demo shows completion reminders while allowing employees to continue working.
 
@@ -175,7 +175,10 @@ The server enforces these checks. Hiding a navigation button is not the access-c
 | Initial sample columns, people, tickets and rules | `lib/workspace-seed.ts` | New-workspace demo seed only |
 | ISO links, useful resources and Microsoft 365 runbooks | `lib/knowledge-resources.json` | Protected resource-library content |
 | News publishers and RSS parser | `lib/news-source.ts` | `NEWS_FEEDS` allowlist, article host and language checks |
-| News retrieval, cache and saved fallback | `app/api/news/route.ts` | Server response and freshness behaviour |
+| News retrieval, cache and saved fallback | `lib/news-service.ts`, `app/api/news/route.ts` | Shared server loader and API freshness behaviour |
+| News filters and public insight pages | `components/news-explorer.tsx`, `app/insights/` | Search, publisher/topic controls, server-rendered hub and guide routes |
+| Original public security guidance | `lib/insights-content.ts` | Guide text, review dates, sources and related services |
+| Capability and social icons | `lib/company-profile.json`, `components/public-icons.tsx` | Public options, platform slots and approved account URLs |
 | Database table definitions | `db/schema.ts` | Drizzle schema |
 | Database changes | `drizzle/` | Ordered SQL migrations |
 | Local/start/build commands | `package.json` and `scripts/` | Runtime entry points |
@@ -280,8 +283,13 @@ The public news endpoint is **`GET /api/news`**. The `NEWS_FEEDS` array in `lib/
 - Microsoft Security Blog: cybersecurity.
 - The Official Microsoft Blog: general technology.
 - Cloudflare Blog: technology and security.
+- Cisco Talos: threat research and security updates.
+- Splunk Security Advisories: product security bulletins, including SOAR when published.
+- Palo Alto Networks SOAR: dedicated orchestration and automation articles.
+- Unit 42: threat research and attack campaigns.
+- CERT-EU: security advisories and important vulnerability alerts.
 
-The server fetches these publishers' English RSS feeds and checks available feed/entry language metadata. No third-party news API key is required. Each source has an explicit URL and allowed host list. Adding a feed means editing this array, checking its language and licence/usage terms, and verifying both the feed and article hosts.
+The server fetches these publishers' English RSS feeds and checks available feed/entry language metadata. No third-party news API key is required. Each source has an explicit URL and allowed host list. Adding a feed means editing this array, checking its language and licence/usage terms, and verifying both the feed and article hosts. The `/insights` hub and public/workspace news dialogs use the shared text, publisher and topic filters in `components/news-explorer.tsx`. See [NEWS.md](NEWS.md) for the exact source and cache contract.
 
 The current implementation fetches on request and caches successful results in a Worker instance for **10 minutes**. If every source is unavailable, that attempt is cached for **one minute**; a new upstream attempt becomes eligible on the next request after that window. Both website and workspace request news every **two minutes** while open. HTTP responses permit **120 seconds** of browser caching for live/partial results and **60 seconds** for cached/unavailable results. These caches are not a scheduled collector or durable news archive.
 
@@ -340,7 +348,7 @@ These are implementation limits for the review system, not a recommendation for 
 
 ## 11. SEO and approval before launch
 
-The review site uses **no-index** metadata so that the demo does not compete with the eventual public company site. Public page metadata lives in `app/layout.tsx`; the employee workspace has its own no-index metadata in `app/workspace/page.tsx`. `app/robots.txt/route.ts` currently disallows all crawling, and `app/sitemap.xml/route.ts` lists only public page routes.
+The review site uses **no-index** metadata so that the demo does not compete with the eventual public company site. `lib/seo.ts` coordinates public metadata and response headers from `website.isReviewDemo`; the employee workspace has its own no-index metadata in `app/workspace/page.tsx`. `app/robots.txt/route.ts` currently disallows all crawling, and `app/sitemap.xml/route.ts` lists only public page routes, including `/insights` and its original guides.
 
 Keep the site private until company registration and the owner's launch instruction. Before launch, set `website.origin` in `lib/company-profile.json` to the real canonical origin, verify company/contact details, and review the public-page index metadata and robots route together. `website.isReviewDemo` is not a substitute for hosting audience controls or DNS configuration. Keep private routes excluded. See [HOSTINGER_AND_DOMAIN.md](HOSTINGER_AND_DOMAIN.md) for the supported domain connection sequence.
 

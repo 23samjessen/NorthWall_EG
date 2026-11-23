@@ -1,5 +1,18 @@
 # Verification record — NorthWallEg review demo
 
+## Expanded news, contact and insights revision — 23 November 2026
+
+- Integrated TypeScript check passed. The existing 44 workspace/backend checks and the new 22 deterministic news checks passed. The news suite covers unsafe links/redirects, XML declarations, language, real date handling, topic evidence and negation, source balance, duplicate articles, partial/total failure, shared caching and fallback timestamps.
+- A real eight-source refresh returned 48 headlines, six per configured source, with no feed errors at `2026-11-23T00:04:05.183Z`. Eight selected articles matched explicit SOAR evidence. The saved snapshot contains these actual responses; publisher publication dates were retained.
+- The local browser showed all eight publishers and the labelled cached state when that preview could not reach upstream feeds. Combined **Splunk Security Advisories + SOAR** filters returned two relevant advisories. Cisco filtering returned six stories. An unmatched text search showed the empty state; clearing restored results. **Show 12 more headlines** expanded the display from 12 to 24 while filters continued to cover all 48.
+- Browser review covered the seven technology controls, a SOAR options dialog, Sam's **Country Manager — Egypt** card and the preferred-contact selection carried into the brief form. Contact details label the supplied telephone as a shared company line. Social placeholders are labelled **Coming soon** and have no invented destinations.
+- The insights hub and an original Microsoft 365 guide were visually reviewed. Guide navigation, numbered official references and related-service links rendered. Read-only metadata inspection confirmed the canonical URL, Egyptian Open Graph image, organization/article/breadcrumb structured data and `noindex, nofollow`.
+- Narrow-layout inspection at 454 and 340 CSS pixels using browser zoom found no horizontal document overflow; the guide collapsed to one column and news filters stacked with readable controls. Desktop zoom was restored after inspection. This was responsive layout QA, not physical-device testing.
+- Public-contact configuration checks confirmed the first-title hierarchy, English/Arabic records, rejected unsafe or mismatched social URLs and hidden unconfigured socials with review mode disabled in an isolated render. The delivered configuration keeps `website.isReviewDemo: true`.
+- No employee identity, role, database schema or stored photo was changed by this revision. The production build and exact-source publication are performed by the publishing workflow after these source/UI checks; hosted deployment results are reported with the delivered version.
+
+The observations below are retained as evidence from earlier revisions. Their three-source news counts describe the earlier deployment, not the expanded feed above.
+
 ## Automated checks
 
 - TypeScript: `npx tsc --noEmit` passed on the integrated source.

@@ -1,6 +1,7 @@
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
+import { shouldNoIndex } from "../lib/seo";
 
 const worker = {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
@@ -28,7 +29,8 @@ const worker = {
     secured.set('X-Content-Type-Options', 'nosniff');
     secured.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     secured.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    secured.set('X-Robots-Tag', 'noindex, nofollow');
+    if (shouldNoIndex(new URL(request.url).pathname)) secured.set('X-Robots-Tag', 'noindex, nofollow');
+    else secured.delete('X-Robots-Tag');
     if (!import.meta.env.DEV) {
       secured.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://chatgpt.com; form-action 'self'");
       secured.set('Strict-Transport-Security', 'max-age=31536000');

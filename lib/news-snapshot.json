@@ -1,199 +1,661 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "language": "en",
-  "fetchedAt": "2026-11-22T22:01:58.025Z",
+  "fetchedAt": "2026-11-23T00:04:05.183Z",
   "items": [
     {
-      "id": "cloudflare-blog-0",
-      "title": "How Cloudflare WAF protects against ruby2shell (CVE-2026-132825)",
-      "url": "https://blog.cloudflare.com/ruby2shell-waf-protection/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-20T20:24:38.000Z"
-    },
-    {
-      "id": "cloudflare-blog-1",
-      "title": "How Cloudflare WAF helps protect against phpAfterShell and other critical PHP flaws",
-      "url": "https://blog.cloudflare.com/phpaftershell-waf-protection/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-20T20:00:45.000Z"
-    },
-    {
-      "id": "microsoft-security-0",
+      "id": "microsoft-security-74cb6c5f",
       "title": "Microsoft named a Leader in the 2026 Gartner® Magic Quadrant™ for SIEM",
       "url": "https://www.microsoft.com/en-us/security/blog/2026/11/20/microsoft-named-a-leader-in-the-2026-gartner-magic-quadrant-for-siem/",
       "source": "Microsoft Security",
       "category": "Cybersecurity",
-      "publishedAt": "2026-11-20T17:00:00.000Z"
+      "publishedAt": "2026-11-20T17:00:00.000Z",
+      "topics": []
     },
     {
-      "id": "cloudflare-blog-2",
-      "title": "nginx2root: Five new nginx vulnerabilities, and how Cloudflare protects origins from the worst of them",
-      "url": "https://blog.cloudflare.com/nginx2root/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-20T01:58:29.000Z"
-    },
-    {
-      "id": "cloudflare-blog-3",
-      "title": "Internet traffic and attacks during the 2026 U.S. midterm elections",
-      "url": "https://blog.cloudflare.com/internet-traffic-2026-us-election/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-19T14:00:00.000Z"
-    },
-    {
-      "id": "cloudflare-blog-4",
-      "title": "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
-      "url": "https://blog.cloudflare.com/open-clairic/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-18T22:00:00.000Z"
-    },
-    {
-      "id": "cloudflare-blog-5",
-      "title": "How Cloudflare WAF helps protect against Java4Shell (CVE-2026-114938)",
-      "url": "https://blog.cloudflare.com/java4shell-waf-protection/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-18T14:52:10.000Z"
-    },
-    {
-      "id": "cloudflare-blog-6",
-      "title": "Quad9’s withdrawal from France: A canary in the coal mine",
-      "url": "https://blog.cloudflare.com/quad9-withdrawal-from-france/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-17T20:24:27.000Z"
-    },
-    {
-      "id": "microsoft-blog-0",
+      "id": "microsoft-blog-9b662c8b",
       "title": "Ignite 2026: Building the frontier ecosystem",
       "url": "https://blogs.microsoft.com/blog/2026/11/17/ignite-2026-building-the-frontier-ecosystem/",
       "source": "Microsoft Blog",
       "category": "Technology",
-      "publishedAt": "2026-11-17T18:36:03.000Z"
+      "publishedAt": "2026-11-17T18:36:03.000Z",
+      "topics": []
     },
     {
-      "id": "microsoft-security-1",
+      "id": "cloudflare-9268917b",
+      "title": "How Cloudflare WAF protects against ruby2shell (CVE-2026-132825)",
+      "url": "https://blog.cloudflare.com/ruby2shell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-20T20:24:38.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "cisco-talos-eef9a7eb",
+      "title": "The internet needs a nap (and you do, too)",
+      "url": "https://blog.talosintelligence.com/the-internet-needs-a-nap-and-you-do-too/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-19T19:00:00.000Z",
+      "topics": []
+    },
+    {
+      "id": "splunk-advisories-fff3c137",
+      "title": "SVD-2026-1113: Vulnerabilities in PHP affecting Splunk Products - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1113",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-20T00:00:00.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-8d62f7a8",
+      "title": "What’s New in Cortex",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/whats-new-in-cortex-july-2026/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2026-07-30T14:00:23.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation"
+      ]
+    },
+    {
+      "id": "unit42-5b893c16",
+      "title": "Dialing for Data: Inside the Com’s High-Profile Heists",
+      "url": "https://unit42.paloaltonetworks.com/com-affiliate-vishing-attacks/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-20T22:00:25.000Z",
+      "topics": [
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "cert-eu-db4b25a0",
+      "title": "2026-022: Critical vulnerabilities in Nginx",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-022/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T17:30:42.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "microsoft-security-fb9820c1",
       "title": "Security for the agentic era, powered by Microsoft Perception",
       "url": "https://www.microsoft.com/en-us/security/blog/2026/11/17/security-for-the-agentic-era-powered-by-microsoft-perception/",
       "source": "Microsoft Security",
       "category": "Cybersecurity",
-      "publishedAt": "2026-11-17T18:14:00.000Z"
+      "publishedAt": "2026-11-17T18:14:00.000Z",
+      "topics": []
     },
     {
-      "id": "microsoft-security-2",
-      "title": "The risks of device code authentication for AI coding agents",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/17/the-risks-of-device-code-authentication-for-ai-coding-agents/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-17T15:00:00.000Z"
-    },
-    {
-      "id": "microsoft-security-3",
-      "title": "High volume phishing campaign uses Microsoft 365 outage lures to target multiple industry sectors",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/16/high-volume-phishing-campaign-uses-microsoft-365-outage-lures-target-multiple-industry-sectors-2/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-17T00:08:41.000Z"
-    },
-    {
-      "id": "microsoft-security-4",
-      "title": "SCKit abuses ScreenConnect to deploy remote access and target technician sessions",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/13/sckit-abuses-screenconnect-deploy-remote-access-target-technician-sessions/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-13T21:31:44.000Z"
-    },
-    {
-      "id": "cloudflare-blog-7",
-      "title": "Kitesurf is now open source",
-      "url": "https://blog.cloudflare.com/kitesurf-open-source/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-13T20:20:21.000Z"
-    },
-    {
-      "id": "cloudflare-blog-8",
-      "title": "Adapting to AI penetration testing orchestrators: The Modern Security Model",
-      "url": "https://blog.cloudflare.com/adapting-to-ai-penetration-testing-orchestrators/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-13T19:26:07.000Z"
-    },
-    {
-      "id": "cloudflare-blog-9",
-      "title": "Introducing Spend Management: Spending limits and alerts for Cloudflare",
-      "url": "https://blog.cloudflare.com/spend-management/",
-      "source": "Cloudflare Blog",
-      "category": "Technology & security",
-      "publishedAt": "2026-11-13T14:00:00.000Z"
-    },
-    {
-      "id": "microsoft-blog-1",
+      "id": "microsoft-blog-b3455d1e",
       "title": "From AI ambition to business impact",
       "url": "https://blogs.microsoft.com/blog/2026/11/12/from-ai-ambition-to-business-impact/",
       "source": "Microsoft Blog",
       "category": "Technology",
-      "publishedAt": "2026-11-12T17:00:03.000Z"
+      "publishedAt": "2026-11-12T17:00:03.000Z",
+      "topics": []
     },
     {
-      "id": "microsoft-security-5",
-      "title": "Trained to betray: How post-training supply chain attacks hijack coding agents",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/12/trained-to-betray-how-post-training-supply-chain-attacks-hijack-coding-agents/",
+      "id": "cloudflare-28779255",
+      "title": "How Cloudflare WAF helps protect against phpAfterShell and other critical PHP flaws",
+      "url": "https://blog.cloudflare.com/phpaftershell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-20T20:00:45.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "cisco-talos-b7f1d502",
+      "title": "The challenge of defending against bulletproof dead drops on public blockchains",
+      "url": "https://blog.talosintelligence.com/the-challenge-of-defending-against-bulletproof-dead-drops-on-public-blockchains/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-18T11:00:00.000Z",
+      "topics": [
+        "Malware"
+      ]
+    },
+    {
+      "id": "splunk-advisories-fef3bfa4",
+      "title": "SVD-2026-1112: Vulnerabilities in NGINX affecting Splunk Products - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1112",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-19T00:00:00.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-b3179abd",
+      "title": "What’s New in Cortex (May ‘26)",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/whats-new-in-cortex-may-26/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2026-05-19T13:00:30.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Cloud security"
+      ]
+    },
+    {
+      "id": "unit42-8f0dca33",
+      "title": "Borrowed Code, Real Consequences: What OPTIMJACK Teaches Us",
+      "url": "https://unit42.paloaltonetworks.com/optimjack-supply-chain-attack/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-17T20:43:14.000Z",
+      "topics": [
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "cert-eu-db4d6437",
+      "title": "2026-021: High Severity Vulnerability in Java SE and OpenJDK",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-021/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T09:11:05.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "microsoft-security-9bfec5d",
+      "title": "The risks of device code authentication for AI coding agents",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/17/the-risks-of-device-code-authentication-for-ai-coding-agents/",
       "source": "Microsoft Security",
       "category": "Cybersecurity",
-      "publishedAt": "2026-11-12T17:00:00.000Z"
+      "publishedAt": "2026-11-17T15:00:00.000Z",
+      "topics": [
+        "Cyberattacks"
+      ]
     },
     {
-      "id": "microsoft-blog-2",
+      "id": "microsoft-blog-d062020a",
       "title": "Scaling AI value without losing control: Lessons from Frontier Firms",
       "url": "https://blogs.microsoft.com/blog/2026/11/12/scaling-ai-value-without-losing-control-lessons-from-frontier-firms/",
       "source": "Microsoft Blog",
       "category": "Technology",
-      "publishedAt": "2026-11-12T16:00:02.000Z"
+      "publishedAt": "2026-11-12T16:00:02.000Z",
+      "topics": []
     },
     {
-      "id": "microsoft-security-6",
-      "title": "The global socket: how threat actors are weaponizing GSocket for stealthy C2",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/11/global-socket-how-threat-actors-weaponizing-gsocket-stealthy-c2/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-11T19:49:57.000Z"
-    },
-    {
-      "id": "microsoft-security-7",
-      "title": "Lessons from 59 Linux Kernel Bug Reports",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/11/lessons-from-59-linux-kernel-bug-reports/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-11T16:55:00.000Z"
-    },
-    {
-      "id": "cloudflare-blog-10",
-      "title": "Choosing QuePaxa, an unusual consensus algorithm",
-      "url": "https://blog.cloudflare.com/choosing-quepaxa/",
+      "id": "cloudflare-d21d6698",
+      "title": "nginx2root: Five new nginx vulnerabilities, and how Cloudflare protects origins from the worst of them",
+      "url": "https://blog.cloudflare.com/nginx2root/",
       "source": "Cloudflare Blog",
       "category": "Technology & security",
-      "publishedAt": "2026-11-11T14:24:46.000Z"
+      "publishedAt": "2026-11-20T01:58:29.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
     },
     {
-      "id": "microsoft-security-8",
-      "title": "Detecting sleeper agents hiding in AI model neurons",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/10/detecting-sleeper-agents-hiding-in-ai-model-neurons/",
-      "source": "Microsoft Security",
-      "category": "Cybersecurity",
-      "publishedAt": "2026-11-10T23:00:00.000Z"
+      "id": "cisco-talos-a1a3bf93",
+      "title": "UAT-12643: Suspected North Korea-aligned actor blends blockchain resilience with targeted infostealing",
+      "url": "https://blog.talosintelligence.com/uat-12643-suspected-north-korea-aligned-actor-blends-blockchain-resilience-with-targeted-infostealing/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-18T11:00:00.000Z",
+      "topics": [
+        "Malware"
+      ]
     },
     {
-      "id": "microsoft-security-9",
-      "title": "FORGE Lab uses agentic tools to identify memory safety issues in Rust",
-      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/09/forge-lab-uses-agentic-tools-to-identify-memory-safety-issues-in-rust/",
+      "id": "splunk-advisories-1f3c45d",
+      "title": "SVD-2026-1111: Security Vulnerabilities in Splunk AI Assistant - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1111",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T00:00:00.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-861bdd2c",
+      "title": "Threat Intelligence in the Era of AI",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/threat-intelligence-in-the-era-of-ai/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2026-04-29T14:00:27.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Threat intelligence"
+      ]
+    },
+    {
+      "id": "unit42-121d39ef",
+      "title": "QUIC and Covert: Novel HTTP/3-Powered RATs Target Southeast Asian Governments",
+      "url": "https://unit42.paloaltonetworks.com/custom-rats-target-southeast-asia-governments/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-16T23:00:55.000Z",
+      "topics": [
+        "Malware",
+        "Threat intelligence",
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "cert-eu-fb4fd52e",
+      "title": "2026-020: Critical Vulnerabilities in Citrix NetScaler ADC and NetScaler Gateway",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-020/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-12T17:20:53.000Z",
+      "topics": [
+        "Vulnerabilities",
+        "Cloud security"
+      ]
+    },
+    {
+      "id": "microsoft-security-44f6cdae",
+      "title": "High volume phishing campaign uses Microsoft 365 outage lures to target multiple industry sectors",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/16/high-volume-phishing-campaign-uses-microsoft-365-outage-lures-target-multiple-industry-sectors-2/",
       "source": "Microsoft Security",
       "category": "Cybersecurity",
-      "publishedAt": "2026-11-09T20:17:31.000Z"
+      "publishedAt": "2026-11-17T00:08:41.000Z",
+      "topics": [
+        "Threat intelligence",
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "microsoft-blog-ae490d67",
+      "title": "Introducing the Microsoft Copilot harness: Unlocking the potential of truly multi-model agentic work",
+      "url": "https://blogs.microsoft.com/blog/2026/10/28/introducing-the-microsoft-copilot-harness-unlocking-the-potential-of-truly-multi-model-agentic-work/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-10-28T16:51:35.000Z",
+      "topics": []
+    },
+    {
+      "id": "cloudflare-1b2d91f1",
+      "title": "Internet traffic and attacks during the 2026 U.S. midterm elections",
+      "url": "https://blog.cloudflare.com/internet-traffic-2026-us-election/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-19T14:00:00.000Z",
+      "topics": [
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "cisco-talos-9bd308ef",
+      "title": "CVE-2026-114938: Critical vulnerability in OpenJDK Java",
+      "url": "https://blog.talosintelligence.com/java4shell/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-18T01:53:03.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "splunk-advisories-f3c2ca",
+      "title": "SVD-2026-1110: Security Vulnerabilities in Splunk App for Stream - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1110",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T00:00:00.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-649ee622",
+      "title": "What’s New in Cortex",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/whats-new-in-cortex/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2025-11-18T22:16:01.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation"
+      ]
+    },
+    {
+      "id": "unit42-6de1e5b8",
+      "title": "Attackers Use Autonomous AI to Target Semiconductor, Defense and Civil Society Sectors",
+      "url": "https://unit42.paloaltonetworks.com/cairn-framework-ai-autonomous-attacks/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-12T15:00:31.000Z",
+      "topics": [
+        "Malware"
+      ]
+    },
+    {
+      "id": "cert-eu-47d364eb",
+      "title": "2026-018: Critical Vulnerabilities in PHP",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-018/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-10-23T14:36:26.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "microsoft-security-9f52f8f2",
+      "title": "SCKit abuses ScreenConnect to deploy remote access and target technician sessions",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/13/sckit-abuses-screenconnect-deploy-remote-access-target-technician-sessions/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-13T21:31:44.000Z",
+      "topics": [
+        "Malware",
+        "Vulnerabilities",
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "microsoft-blog-32c79bb3",
+      "title": "The platform approach to becoming Frontier",
+      "url": "https://blogs.microsoft.com/blog/2026/10/27/the-platform-approach-to-becoming-frontier/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-10-27T16:01:38.000Z",
+      "topics": []
+    },
+    {
+      "id": "cloudflare-7c74d1ca",
+      "title": "An updated Clairic and Clairic-flash are now open-weight, from the new Workers AI Superintelligence team",
+      "url": "https://blog.cloudflare.com/open-clairic/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-18T22:00:00.000Z",
+      "topics": []
+    },
+    {
+      "id": "cisco-talos-a02c67b5",
+      "title": "ARTEX and beyond: AI-enabled penetration testing platforms",
+      "url": "https://blog.talosintelligence.com/artex-and-beyond/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-13T20:57:13.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "splunk-advisories-6df6acf8",
+      "title": "SVD-2026-1109: Third-Party Package Updates in Splunk SOAR - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1109",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T00:00:00.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-78b2adb3",
+      "title": "How Cortex Defends Against Microsoft SharePoint \"ToolShell\" Exploits",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/how-cortex-defends-against-microsoft-sharepoint-toolshell-exploits/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2025-10-10T14:00:28.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "unit42-d6f9be32",
+      "title": "ARTEX and AI-Powered Red Teaming Tools: What Defenders Need to Know",
+      "url": "https://unit42.paloaltonetworks.com/artex-and-ai-powered-red-teaming-tools/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-11T23:00:53.000Z",
+      "topics": []
+    },
+    {
+      "id": "cert-eu-67d5d5e2",
+      "title": "2026-019: Critical Vulnerability in GitLab Community and Enterprise Editions",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-019/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-10-22T09:14:22.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "microsoft-security-eda80fc8",
+      "title": "Trained to betray: How post-training supply chain attacks hijack coding agents",
+      "url": "https://www.microsoft.com/en-us/security/blog/2026/11/12/trained-to-betray-how-post-training-supply-chain-attacks-hijack-coding-agents/",
+      "source": "Microsoft Security",
+      "category": "Cybersecurity",
+      "publishedAt": "2026-11-12T17:00:00.000Z",
+      "topics": [
+        "Cyberattacks"
+      ]
+    },
+    {
+      "id": "microsoft-blog-986df0dc",
+      "title": "Introducing a Voluntary Exit Offer",
+      "url": "https://blogs.microsoft.com/blog/2026/10/26/introducing-a-voluntary-exit-offer/",
+      "source": "Microsoft Blog",
+      "category": "Technology",
+      "publishedAt": "2026-10-26T15:33:56.000Z",
+      "topics": []
+    },
+    {
+      "id": "cloudflare-5eff3b19",
+      "title": "How Cloudflare WAF helps protect against Java4Shell (CVE-2026-114938)",
+      "url": "https://blog.cloudflare.com/java4shell-waf-protection/",
+      "source": "Cloudflare Blog",
+      "category": "Technology & security",
+      "publishedAt": "2026-11-18T14:52:10.000Z",
+      "topics": [
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "cisco-talos-f6d5fe8f",
+      "title": "Never be afraid to ask questions",
+      "url": "https://blog.talosintelligence.com/never-be-afraid-to-ask-questions/",
+      "source": "Cisco Talos",
+      "category": "Threat research",
+      "publishedAt": "2026-11-12T19:00:00.000Z",
+      "topics": []
+    },
+    {
+      "id": "splunk-advisories-6ef6ae8b",
+      "title": "SVD-2026-1108: Security Vulnerabilities in Splunk SOAR - November 2026",
+      "url": "https://advisory.splunk.com/advisories/SVD-2026-1108",
+      "source": "Splunk Security Advisories",
+      "category": "Security advisories",
+      "publishedAt": "2026-11-18T00:00:00.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Vulnerabilities"
+      ]
+    },
+    {
+      "id": "palo-alto-soar-ffab5ef1",
+      "title": "Defending against Phantom Taurus with Cortex",
+      "url": "https://www.paloaltonetworks.com/blog/security-operations/the-rise-of-phantom-taurus-unmasking-a-stealthy-new-threat-to-global-security-with-cortex/",
+      "source": "Palo Alto Networks",
+      "category": "Security operations",
+      "publishedAt": "2025-09-30T13:00:11.000Z",
+      "topics": [
+        "SOAR",
+        "Security automation",
+        "Malware",
+        "Threat intelligence"
+      ]
+    },
+    {
+      "id": "unit42-cef2fa9b",
+      "title": "The XG Files: Falcon C2 Flying Under The (Browser) Radar",
+      "url": "https://unit42.paloaltonetworks.com/falcon-c2-browser-compromise/",
+      "source": "Unit 42",
+      "category": "Threat research",
+      "publishedAt": "2026-11-11T15:00:23.000Z",
+      "topics": [
+        "Malware"
+      ]
+    },
+    {
+      "id": "cert-eu-e7eea448",
+      "title": "2026-017: Critical Vulnerability in Cisco Secure Email Gateway",
+      "url": "https://cert.europa.eu/publications/security-advisories/2026-017/",
+      "source": "CERT-EU",
+      "category": "Security advisories",
+      "publishedAt": "2026-10-15T09:38:20.000Z",
+      "topics": [
+        "Malware",
+        "Vulnerabilities"
+      ]
     }
-  ]
+  ],
+  "sources": [
+    {
+      "id": "microsoft-security",
+      "name": "Microsoft Security",
+      "feedUrl": "https://www.microsoft.com/en-us/security/blog/feed/",
+      "category": "Cybersecurity",
+      "status": "available",
+      "availableCount": 10,
+      "selectedCount": 6
+    },
+    {
+      "id": "microsoft-blog",
+      "name": "Microsoft Blog",
+      "feedUrl": "https://blogs.microsoft.com/feed/",
+      "category": "Technology",
+      "status": "available",
+      "availableCount": 10,
+      "selectedCount": 6
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare Blog",
+      "feedUrl": "https://blog.cloudflare.com/rss/",
+      "category": "Technology & security",
+      "status": "available",
+      "availableCount": 20,
+      "selectedCount": 6
+    },
+    {
+      "id": "cisco-talos",
+      "name": "Cisco Talos",
+      "feedUrl": "https://blog.talosintelligence.com/rss/",
+      "category": "Threat research",
+      "status": "available",
+      "availableCount": 15,
+      "selectedCount": 6
+    },
+    {
+      "id": "splunk-advisories",
+      "name": "Splunk Security Advisories",
+      "feedUrl": "https://advisory.splunk.com/feed.xml",
+      "category": "Security advisories",
+      "status": "available",
+      "availableCount": 30,
+      "selectedCount": 6
+    },
+    {
+      "id": "palo-alto-soar",
+      "name": "Palo Alto Networks",
+      "feedUrl": "https://www.paloaltonetworks.com/blog/tag/soar-2/feed/",
+      "category": "Security operations",
+      "topic": "SOAR",
+      "status": "available",
+      "availableCount": 10,
+      "selectedCount": 6
+    },
+    {
+      "id": "unit42",
+      "name": "Unit 42",
+      "feedUrl": "https://unit42.paloaltonetworks.com/feed/",
+      "category": "Threat research",
+      "status": "available",
+      "availableCount": 15,
+      "selectedCount": 6
+    },
+    {
+      "id": "cert-eu",
+      "name": "CERT-EU",
+      "feedUrl": "https://cert.europa.eu/publications/security-advisories-rss",
+      "category": "Security advisories",
+      "status": "available",
+      "availableCount": 10,
+      "selectedCount": 6
+    }
+  ],
+  "topicCoverage": {
+    "SOAR": {
+      "count": 8,
+      "status": "available",
+      "message": "8 displayed publisher articles match this topic."
+    },
+    "Security automation": {
+      "count": 8,
+      "status": "available",
+      "message": "8 displayed publisher articles match this topic."
+    },
+    "Malware": {
+      "count": 8,
+      "status": "available",
+      "message": "8 displayed publisher articles match this topic."
+    },
+    "Ransomware": {
+      "count": 0,
+      "status": "no_matches",
+      "message": "No matching articles in the displayed publisher set."
+    },
+    "Active exploitation": {
+      "count": 0,
+      "status": "no_matches",
+      "message": "No matching articles in the displayed publisher set."
+    },
+    "Vulnerabilities": {
+      "count": 20,
+      "status": "available",
+      "message": "20 displayed publisher articles match this topic."
+    },
+    "Threat intelligence": {
+      "count": 4,
+      "status": "available",
+      "message": "4 displayed publisher articles match this topic."
+    },
+    "Cloud security": {
+      "count": 2,
+      "status": "available",
+      "message": "2 displayed publisher articles match this topic."
+    },
+    "Cyberattacks": {
+      "count": 8,
+      "status": "available",
+      "message": "8 displayed publisher articles match this topic."
+    },
+    "Security updates": {
+      "count": 0,
+      "status": "no_matches",
+      "message": "No matching articles in the displayed publisher set."
+    }
+  },
+  "selectionPolicy": "source-balanced"
 }

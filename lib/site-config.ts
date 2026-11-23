@@ -1,13 +1,22 @@
 import profile from './company-profile.json';
+import { services } from './marketing-content';
 
 /** Public content only. Credentials, member roles and access policy belong on the server. */
 export type PublicLanguage = 'en' | 'ar';
 export type LocalizedText = { en: string; ar: string };
 type PublicLinkInput = { id?: string; enabled?: boolean; label: LocalizedText; url: string };
+export type SocialPlatform = 'facebook' | 'instagram' | 'tiktok' | 'linkedin' | 'youtube';
+export type CapabilityIconName = 'microsoft' | 'network' | 'splunk' | 'workflow' | 'cloud-shield' | 'shield' | 'identity';
+type SocialLinkInput = PublicLinkInput & { platform: string; icon: string; showInPreview?: boolean };
+type PlatformInput = {
+  id: string; enabled: boolean; icon: string; label: LocalizedText; summary: LocalizedText;
+  serviceId: string; options: { en: string[]; ar: string[] };
+};
 type TeamInput = {
   id: string; enabled: boolean; name: string;
   titles: { en: string[]; ar: string[] }; bio: LocalizedText;
   image: string; imageAlt: LocalizedText; imageIsPlaceholder: boolean;
+  contact?: { email?: string; phone?: string };
   links: PublicLinkInput[];
 };
 const clean = (value: unknown): string => typeof value === 'string' ? value.trim() : '';
@@ -57,6 +66,22 @@ function emailUrl(value: string): string | null {
   const [local, domain] = input.split('@');
   return `mailto:${encodeURIComponent(local)}@${domain}`;
 }
+const socialHosts: Record<SocialPlatform, string[]> = {
+  facebook: ['facebook.com', 'www.facebook.com', 'm.facebook.com'],
+  instagram: ['instagram.com', 'www.instagram.com'],
+  tiktok: ['tiktok.com', 'www.tiktok.com'],
+  linkedin: ['linkedin.com', 'www.linkedin.com'],
+  youtube: ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be'],
+};
+/** Social slots require HTTPS, a supported platform host and a populated profile path. */
+export function safeSocialUrl(value: string, platform: string): string | null {
+  if (!Object.hasOwn(socialHosts, platform)) return null;
+  const href = safePublicUrl(value);
+  if (!href?.startsWith('https://')) return null;
+  const url = new URL(href);
+  if (url.port || !socialHosts[platform as SocialPlatform].includes(url.hostname) || url.pathname === '/') return null;
+  return href;
+}
 function links(items: PublicLinkInput[]) {
   return items.flatMap(item => {
     const href = safePublicUrl(item.url);
@@ -78,7 +103,27 @@ const team = (profile.team as TeamInput[]).flatMap(person => {
   const image = safePublicImage(person.image);
   const titles = { en: person.titles.en.map(clean).filter(Boolean), ar: person.titles.ar.map(clean).filter(Boolean) };
   if (!person.enabled || !clean(person.name) || !image || (!titles.en.length && !titles.ar.length)) return [];
-  return [{ ...person, name: clean(person.name), titles, image, links: links(person.links) }];
+  const email = clean(person.contact?.email);
+  const phone = clean(person.contact?.phone);
+  return [{ ...person, name: clean(person.name), titles, image, links: links(person.links),
+    contact: { email, emailHref: emailUrl(email), phone, phoneHref: phoneUrl(phone) },
+  }];
+});
+const socialChannels = (profile.contact.socialLinks as SocialLinkInput[]).flatMap(item => {
+  if (!Object.hasOwn(socialHosts, item.platform) || !hasText(item.label)) return [];
+  const platform = item.platform as SocialPlatform;
+  // A configured platform determines its icon so mismatched brands cannot be rendered.
+  if (item.icon !== platform) return [];
+  const href = item.enabled ? safeSocialUrl(item.url, platform) : null;
+  if (!href && !(profile.website.isReviewDemo && item.showInPreview)) return [];
+  return [{ ...item, platform, icon: platform, href, configured: Boolean(href) }];
+});
+const capabilityIcons = new Set<CapabilityIconName>(['microsoft', 'network', 'splunk', 'workflow', 'cloud-shield', 'shield', 'identity']);
+const serviceIds = new Set(services.map(service => service.id));
+const platforms = (profile.platforms as PlatformInput[]).flatMap(item => {
+  const options = { en: item.options.en.map(clean).filter(Boolean), ar: item.options.ar.map(clean).filter(Boolean) };
+  if (!item.enabled || !/^[a-z0-9][a-z0-9-]*$/.test(item.id) || !hasText(item.label) || !hasText(item.summary) || !serviceIds.has(item.serviceId) || !capabilityIcons.has(item.icon as CapabilityIconName) || (!options.en.length && !options.ar.length)) return [];
+  return [{ ...item, icon: item.icon as CapabilityIconName, options }];
 });
 const additionalContent = profile.additionalContent.filter(item => item.enabled && hasText(item.title) && hasText(item.body)).map(item => ({
   ...item, image: safePublicImage(item.image),
@@ -102,10 +147,12 @@ export const siteConfig = {
   company: Object.fromEntries(Object.entries(profile.company).map(([key, value]) => [key, clean(value)])) as typeof profile.company,
   phones,
   emails,
-  socialLinks: links(profile.contact.socialLinks),
+  socialLinks: socialChannels.filter((item): item is typeof item & { href: string } => Boolean(item.href)),
+  socialChannels,
   officeHours: profile.contact.officeHours.filter(item => item.enabled && hasText(item.value)),
   locations,
   team,
+  platforms,
   additionalContent,
   additionalLinks: links(profile.additionalLinks),
 };

@@ -20,11 +20,11 @@ try {
     for(const error of result.errors)console.error(`${error.source}: ${error.code||'unavailable'}`);
     process.exitCode=1;
   } else {
-    const snapshot={schemaVersion:1,language:'en',fetchedAt:result.fetchedAt,items:result.items};
+    const snapshot={schemaVersion:2,language:'en',fetchedAt:result.fetchedAt,items:result.items,sources:result.sources,topicCoverage:result.topicCoverage,selectionPolicy:result.selectionPolicy};
     const path=join(root,'lib/news-snapshot.json');
     const pending=path+'.pending';
     await writeFile(pending,JSON.stringify(snapshot,null,2)+'\n');
     await rename(pending,path);
-    console.log(JSON.stringify({saved:'lib/news-snapshot.json',items:snapshot.items.length,sources:[...new Set(snapshot.items.map(item=>item.source))],fetchedAt:snapshot.fetchedAt}));
+    console.log(JSON.stringify({saved:'lib/news-snapshot.json',items:snapshot.items.length,sources:snapshot.sources?.map(source=>({name:source.name,status:source.status,available:source.availableCount,selected:source.selectedCount})),topics:Object.fromEntries(Object.entries(snapshot.topicCoverage||{}).map(([topic,coverage])=>[topic,coverage.count])),fetchedAt:snapshot.fetchedAt}));
   }
 } finally { await rm(temporary,{recursive:true,force:true}); }

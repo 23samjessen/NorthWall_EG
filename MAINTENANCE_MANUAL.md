@@ -29,6 +29,9 @@ Keep the hosted site private until company registration and your instruction to 
 | Read who changed a workspace record and when | **Evidence log**, as an administrator |
 | Change protected handbook content or employee links | `lib/knowledge-resources.json` |
 | Change news sources | `NEWS_FEEDS` in `lib/news-source.ts` |
+| Change technology icons and their option dialogs | `platforms` in `lib/company-profile.json` |
+| Activate social account icons | `contact.socialLinks` in `lib/company-profile.json` |
+| Add or update an original security guide | `lib/insights-content.ts` |
 | Understand domain and hosting options | [docs/HOSTINGER_AND_DOMAIN.md](docs/HOSTINGER_AND_DOMAIN.md) |
 
 Public source changes need a new build and deployment to appear on the hosted site. Saved workspace settings and employee profiles are runtime data; they do not require a source commit.
@@ -62,7 +65,13 @@ The file already includes the supplied main phone and disabled blank slots for l
 | `contact.officeHours` | `value.en`, `value.ar` | Include the actual days, times and timezone. |
 | `contact.locations` | `name`, `kind`, `address`, `mapUrl` | Use a real service area or office; optional address/map fields may remain blank. |
 
-Empty, disabled or invalid contact values are omitted. Adding a public email address creates a contact link; it does not configure a sending service for the enquiry form.
+Empty, disabled or invalid contact values are omitted. The exception is an explicitly configured social review slot: `showInPreview: true` shows its icon with **Coming soon** while `website.isReviewDemo` is true. Adding a public email address creates a contact link; it does not configure a sending service for the enquiry form.
+
+### Activate the social channel icons
+
+Facebook, Instagram, TikTok, LinkedIn and YouTube have prepared slots under `contact.socialLinks`. Paste your approved account's HTTPS URL into its `url` and set `enabled: true`. Keep `platform` and `icon` equal to that platform's identifier (`facebook`, `instagram`, `tiktok`, `linkedin` or `youtube`). The URL must be on the matching platform's host and include the profile/channel path. Blank slots do not navigate anywhere. They disappear automatically when review mode is turned off.
+
+These are ordinary profile links. They do not create accounts, place advertisements, install tracking pixels or grant advertising-account access. Use [docs/FUTURE_ROADMAP.md](docs/FUTURE_ROADMAP.md) to plan campaigns and measurement later.
 
 ### Add a location
 
@@ -91,7 +100,7 @@ The initial public directory contains:
 | ID | Person | Titles | Current asset |
 | --- | --- | --- | --- |
 | `pernille-jessen` | Pernille Jessen | CEO and IoT Engineer | `public/assets/team/pernille-jessen.svg` |
-| `sam-jessen` | Sam Jessen | Network & Cybersecurity Engineer | `public/assets/team/sam-jessen.svg` |
+| `sam-jessen` | Sam Jessen | Country Manager — Egypt; Network & Cybersecurity Engineer | `public/assets/team/sam-jessen.svg` |
 
 The current SVGs are labelled monogram placeholders. They are not photographs. No biography or sign-in email has been invented for Pernille.
 
@@ -116,7 +125,9 @@ Titles use one array per language. Pernille's current English value is:
 }
 ```
 
-Edit the strings or add another title to the relevant array. The interface joins the titles into the public title line. Use `bio.en` and `bio.ar` for an optional supplied biography.
+Edit the strings or add another title to the relevant array. The compact card under **Contact** shows the first title; its contact dialog shows the primary and secondary titles. Sam's first title is **Country Manager — Egypt** and his second is **Network & Cybersecurity Engineer**. This public wording does not change his ownership or administrator role. Use `bio.en` and `bio.ar` for an optional supplied biography.
+
+Each person's optional `contact.email` and `contact.phone` fields create validated direct contact actions when populated. Leave them blank until the person approves the details. The existing company telephone is labelled as a shared company line in the dialog. **Choose as preferred contact** selects a preferred contact in the project brief; it does not silently send a message or assign a workspace task.
 
 To add a person, copy the disabled `additional-team-member` object, give it a unique ID, fill the name, at least one title and a valid image, then enable it. Add a real photograph or an honestly labelled monogram placeholder. Optional `links` can point to approved professional profiles.
 
@@ -213,6 +224,8 @@ Edit `featuredServiceOptions` in `components/marketing.tsx` to change the short 
 
 Each secondary icon opens the existing modal with **Full service page** and **Discuss this service** controls. Featured title links still open the detailed service routes. Keep service IDs stable to preserve those URLs. Search and category filters apply across both groups and reopen matching secondary results when changed.
 
+The separate **Platforms & capabilities** row is configured in `lib/company-profile.json` under `platforms`. Each entry has a unique `id`, `enabled`, an allowed `icon`, localised `label`/`summary`, localised `options` arrays, and an existing `serviceId`. Change the text and option bullets there; add a supported icon in `components/public-icons.tsx` and its validation in `lib/site-config.ts` only if a new icon is needed. Product references describe possible project scope and do not claim vendor partnership or certification.
+
 The project-brief builder downloads a text brief. Saving a demo enquiry requires an authorised workspace and creates a ticket. It does not send email. A future public submission pipeline needs its own validated backend/delivery integration.
 
 ### Colours, logo and images
@@ -232,7 +245,9 @@ The **Explore the look** preference is stored per browser. Clear the `nw-design-
 
 ## 7. News and the employee knowledge library
 
-The allowlist and RSS parser are in **`lib/news-source.ts`**. The current publishers are Microsoft Security, Microsoft Blog and Cloudflare Blog. The route `app/api/news/route.ts` fetches and caches headlines and reports live, partial, cached or unavailable status.
+The allowlist and RSS parser are in **`lib/news-source.ts`**. Eight configured feeds cover Microsoft Security, Microsoft Blog, Cloudflare, Cisco Talos, Splunk Security Advisories, Palo Alto Networks SOAR, Unit 42 and CERT-EU. The shared **`lib/news-service.ts`** loader supplies both `/api/news` and the server-rendered **`/insights`** hub. The hub and the public/workspace news dialogs support text, publisher and topic filters.
+
+Open pages check every two minutes. Successful upstream responses are cached for ten minutes and refreshed on a subsequent request; a total failure is retried after a one-minute cache. Status labels distinguish live, partial, cached and unavailable results. Publisher publication dates remain separate from successful retrieval and attempted-check times. Topic labels come from individual headlines, summaries or publisher categories. A SOAR feed can contain older relevant articles; an old article does not become new because it was retrieved today. See [docs/NEWS.md](docs/NEWS.md) for exact sources, limits and diagnostics.
 
 Refresh the saved fallback before an intended release when the sources are available:
 
@@ -241,6 +256,8 @@ npm run news:refresh
 ```
 
 The command replaces `lib/news-snapshot.json` only when all configured feeds succeed. It is not a scheduled job. Review source/language checks before adding a feed. Preserve article dates, publisher links and successful retrieval timestamps; cached headlines must stay labelled as cached.
+
+Public planning guides live in **`lib/insights-content.ts`** and render at `/insights/<slug>`. Each guide includes original text, a stable slug, related service IDs, an explicit `updatedAt` date and official references mapped to its sections. Update the date only after reviewing the content. Add genuinely useful guidance and approved company evidence instead of copying publisher articles into many near-duplicate pages. The sitemap automatically includes the guides. The search plan is [docs/SEO_AND_CONTENT_PLAN.md](docs/SEO_AND_CONTENT_PLAN.md).
 
 Edit **`lib/knowledge-resources.json`** for official resource links and original Microsoft 365 runbooks. Follow a neighboring record's shape, use official source URLs, and update its review date only after checking the content. Paid ISO standards are linked, not reproduced. The website returns the library after membership checks, but this resource file is included in the public source repository. Keep confidential company procedures in separately protected backend storage rather than adding them to this JSON or `public/`.
 
@@ -283,6 +300,7 @@ Before releasing a code change:
 ```sh
 npx tsc --noEmit
 npm run test:backend
+npm run test:news
 npm run build
 ```
 

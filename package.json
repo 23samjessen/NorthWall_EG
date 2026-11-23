@@ -13,7 +13,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "news:refresh": "node scripts/refresh-news.mjs",
-    "test:backend": "node scripts/test-workspace.mjs"
+    "test:backend": "node scripts/test-workspace.mjs",
+    "test:news": "node scripts/test-news.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

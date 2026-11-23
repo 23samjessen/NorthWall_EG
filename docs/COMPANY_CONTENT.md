@@ -16,11 +16,12 @@ The company is preparing for launch. Registration, tax and address fields are in
 | Registered address | `company.registeredAddress` | Footer company information, when populated. |
 | Telephone numbers | `contact.phones` | Footer; the first enabled primary number also appears beside the FAQs. |
 | Email addresses | `contact.emails` | Footer contact column. |
-| Company social profiles | `contact.socialLinks` | Footer contact column. |
+| Company social profiles | `contact.socialLinks` | Footer brand icons; approved profile links or labelled review placeholders. |
 | Contact/office hours | `contact.officeHours` | Footer contact column. |
 | Service areas and offices | `contact.locations` | Footer locations; addresses and map links appear only when supplied. |
-| People, titles, photos and biographies | `team` | **Our team** section at `#team`, linked from navigation and footer. |
-| Extra company content | `additionalContent` | Additional cards after the team section. |
+| People, titles, photos and biographies | `team` | Compact cards under **Contact**, with expandable details. `#team` remains a section anchor. |
+| Technology icons and option lists | `platforms` | **Platforms & capabilities** row with detail dialogs. |
+| Extra company content | `additionalContent` | Optional additional company information cards. |
 | Extra public links | `additionalLinks` | A supplementary footer link row. |
 | Main hero image | `website.heroImage` | Main hero for the standard theme. The Nile-theme image is selected in `components/marketing.tsx`. |
 | Canonical site origin | `website.origin` | Metadata, service canonical links and sitemap. Changing this does not connect a domain. |
@@ -47,9 +48,9 @@ The two configured public profiles are:
 | Profile ID | Name | English title | Current image |
 | --- | --- | --- | --- |
 | `pernille-jessen` | Pernille Jessen | CEO & IoT Engineer | `public/assets/team/pernille-jessen.svg` |
-| `sam-jessen` | Sam Jessen | Network & Cybersecurity Engineer | `public/assets/team/sam-jessen.svg` |
+| `sam-jessen` | Sam Jessen | Country Manager — Egypt; Network & Cybersecurity Engineer | `public/assets/team/sam-jessen.svg` |
 
-These SVGs are labelled monogram placeholders, not portraits. Each card currently says **Photograph forthcoming**. No personal photographs or invented biographies have been added.
+These SVGs are labelled monogram placeholders, not portraits. The expanded details identify a forthcoming photograph. No personal photographs or invented biographies have been added.
 
 To replace a placeholder:
 
@@ -59,7 +60,9 @@ To replace a placeholder:
 4. Set `imageIsPlaceholder` to `false`.
 5. Add a supplied biography in `bio.en` and `bio.ar`, if desired. Empty biographies remain hidden.
 
-Titles are arrays. Pernille's English array is `["CEO", "IoT Engineer"]`; the interface joins the titles as **CEO & IoT Engineer**. Sam has one title, **Network & Cybersecurity Engineer**. Arabic title text is editable separately.
+Titles are arrays. The compact card shows the **first title**, while the details show the full list. Pernille's English array is `["CEO", "IoT Engineer"]`. Sam's is `["Country Manager — Egypt", "Network & Cybersecurity Engineer"]`. Arabic title text is editable separately. A public title does not change ownership or employee permissions.
+
+Each person also has a prepared `contact` object with `email` and `phone` strings. Populate those only with approved direct contact details. Empty values produce no direct-contact controls; the supplied general number remains a clearly labelled shared company line. Choosing a person in their dialog carries a **preferred contact** into the project brief and its download. It does not send a message or automatically assign work.
 
 To add someone else, copy the disabled `additional-team-member` record, give it a unique `id`, and fill in `name`, at least one title and a valid image. Add a real photo or an explicitly labelled monogram placeholder, then enable the record. A profile without a name, title or valid image is not rendered.
 
@@ -78,6 +81,30 @@ The URL above is a documentation example; replace it before enabling a link.
 
 **Public team content does not grant login access.** Adding or changing a person here does not create an employee account, change a workspace role or publish their internal profile. Employee membership is managed separately in the workspace backend and administrator interface.
 
+## Social channel icons
+
+The prepared platforms are `facebook`, `instagram`, `tiktok`, `linkedin` and `youtube`. A record has this shape:
+
+```json
+{
+  "id": "facebook",
+  "enabled": false,
+  "platform": "facebook",
+  "icon": "facebook",
+  "showInPreview": true,
+  "label": { "en": "Facebook", "ar": "فيسبوك" },
+  "url": ""
+}
+```
+
+Paste the real approved account URL into `url` and set `enabled` to `true`. The HTTPS host must match the platform and the path must identify a profile/channel. Keep `icon` equal to `platform`. Unconfigured slots with `showInPreview: true` appear as non-navigating **Coming soon** icons during private review. They are hidden automatically when `website.isReviewDemo` becomes false. No social handle has been invented, and these links install no advertising pixels.
+
+## Technology capability icons
+
+Each `platforms` entry contains `id`, `enabled`, `icon`, `label`, `summary`, `options` and `serviceId`. Text uses English/Arabic objects; `options` contains one array of strings per language. The service ID must match an existing item in `lib/marketing-content.js` so its enquiry and full-page actions have a real destination.
+
+Supported icon names are `microsoft`, `network`, `splunk`, `workflow`, `cloud-shield`, `shield` and `identity`. The labels identify platforms or capabilities under consideration; they do not claim that NorthWallEg is a certified partner. Code-native icon rendering is in `components/public-icons.tsx`.
+
 ## Locations and hours
 
 The initial location records describe **service areas in Egypt and Denmark**. They do not claim registered offices or street addresses.
@@ -92,9 +119,9 @@ The disabled templates are ready for later additions:
 
 - **`additionalContent`**: requires `enabled: true`, a nonempty `title` and `body`. Optional `image`, `imageAlt` and `link` fields add an image or working destination. Text is displayed as text, not executable HTML.
 - **`additionalLinks`**: requires `enabled: true`, a nonempty `label` and a valid `url`.
-- **`contact.socialLinks`**: follows the same enabled/label/URL pattern.
+- **`contact.socialLinks`**: follows the platform-specific shape above, including the review-placeholder rule.
 
-Blank and disabled records are hidden. Unsupported or unsafe URLs are omitted rather than displayed as dead buttons. Disabling every team record also removes the team navigation link and section.
+Blank and disabled records are hidden, apart from explicitly labelled social review slots. Unsupported or unsafe URLs never become clickable links. Disabling every team record removes the contact-card group and its footer link.
 
 Supported internal section anchors include `#expertise`, `#industries`, `#approach`, `#about`, `#team` and `#contact`. Link only to sections that remain enabled. Service pages use paths such as `/en/services/microsoft-365`.
 
@@ -110,8 +137,8 @@ Public links permit HTTPS, same-site paths and normal section anchors. `javascri
 
 - `lib/site-config.ts` imports the JSON, filters enabled/populated records, validates links and retains the existing `siteConfig` API.
 - `components/marketing.tsx` renders the team, contacts, populated legal details and optional content.
-- `app/globals.css` contains the team styles under `.nw-marketing .nw-team` and company-detail styles under `.nw-public-*` / `.nw-company-legal`.
+- `app/globals.css` contains the contact-card, platform, social and company-detail styles.
 - `public/assets/team/` contains the current monogram placeholders and is the recommended location for future team photographs.
-- `app/layout.tsx` and `app/robots.txt/route.ts` control the current no-index policy. Do not change launch visibility merely to edit content.
+- `lib/seo.ts`, page metadata, `app/robots.txt/route.ts` and `worker/index.ts` coordinate indexing from `website.isReviewDemo`. Do not change launch visibility merely to edit content; Site access and DNS remain separate settings.
 
 After editing, check that the JSON is valid (no comments or trailing commas), run `npx tsc --noEmit`, and review both `/` and `/ar` at desktop and mobile widths. An updated build/deployment is needed for source changes to appear on the hosted demo; this file does not update a live database.

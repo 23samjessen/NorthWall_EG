@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "company": {
     "displayName": "NorthWallEg",
     "legalName": "",
@@ -19,14 +19,20 @@
         "id": "primary",
         "enabled": true,
         "primary": true,
-        "label": { "en": "Main line", "ar": "الهاتف الرئيسي" },
+        "label": {
+          "en": "Main line",
+          "ar": "الهاتف الرئيسي"
+        },
         "number": "+45 53 88 23 02"
       },
       {
         "id": "additional-phone",
         "enabled": false,
         "primary": false,
-        "label": { "en": "", "ar": "" },
+        "label": {
+          "en": "",
+          "ar": ""
+        },
         "number": ""
       }
     ],
@@ -34,15 +40,72 @@
       {
         "id": "general-enquiries",
         "enabled": false,
-        "label": { "en": "General enquiries", "ar": "الاستفسارات العامة" },
+        "label": {
+          "en": "General enquiries",
+          "ar": "الاستفسارات العامة"
+        },
         "address": ""
       }
     ],
     "socialLinks": [
       {
-        "id": "linkedin",
+        "id": "facebook",
+        "platform": "facebook",
+        "icon": "facebook",
         "enabled": false,
-        "label": { "en": "LinkedIn", "ar": "LinkedIn" },
+        "showInPreview": true,
+        "label": {
+          "en": "Facebook",
+          "ar": "Facebook"
+        },
+        "url": ""
+      },
+      {
+        "id": "instagram",
+        "platform": "instagram",
+        "icon": "instagram",
+        "enabled": false,
+        "showInPreview": true,
+        "label": {
+          "en": "Instagram",
+          "ar": "Instagram"
+        },
+        "url": ""
+      },
+      {
+        "id": "tiktok",
+        "platform": "tiktok",
+        "icon": "tiktok",
+        "enabled": false,
+        "showInPreview": true,
+        "label": {
+          "en": "TikTok",
+          "ar": "TikTok"
+        },
+        "url": ""
+      },
+      {
+        "id": "linkedin",
+        "platform": "linkedin",
+        "icon": "linkedin",
+        "enabled": false,
+        "showInPreview": true,
+        "label": {
+          "en": "LinkedIn",
+          "ar": "LinkedIn"
+        },
+        "url": ""
+      },
+      {
+        "id": "youtube",
+        "platform": "youtube",
+        "icon": "youtube",
+        "enabled": false,
+        "showInPreview": true,
+        "label": {
+          "en": "YouTube",
+          "ar": "YouTube"
+        },
         "url": ""
       }
     ],
@@ -50,15 +113,24 @@
       {
         "id": "contact-hours",
         "enabled": false,
-        "label": { "en": "Contact hours", "ar": "مواعيد التواصل" },
-        "value": { "en": "", "ar": "" }
+        "label": {
+          "en": "Contact hours",
+          "ar": "مواعيد التواصل"
+        },
+        "value": {
+          "en": "",
+          "ar": ""
+        }
       }
     ],
     "locations": [
       {
         "id": "egypt",
         "enabled": true,
-        "name": { "en": "Egypt", "ar": "مصر" },
+        "name": {
+          "en": "Egypt",
+          "ar": "مصر"
+        },
         "kind": "service-area",
         "address": "",
         "mapUrl": ""
@@ -66,7 +138,10 @@
       {
         "id": "denmark",
         "enabled": true,
-        "name": { "en": "Denmark", "ar": "الدنمارك" },
+        "name": {
+          "en": "Denmark",
+          "ar": "الدنمارك"
+        },
         "kind": "service-area",
         "address": "",
         "mapUrl": ""
@@ -74,7 +149,10 @@
       {
         "id": "additional-location",
         "enabled": false,
-        "name": { "en": "", "ar": "" },
+        "name": {
+          "en": "",
+          "ar": ""
+        },
         "kind": "service-area",
         "address": "",
         "mapUrl": ""
@@ -87,64 +165,367 @@
       "enabled": true,
       "name": "Pernille Jessen",
       "titles": {
-        "en": ["CEO", "IoT Engineer"],
-        "ar": ["الرئيسة التنفيذية", "مهندسة إنترنت الأشياء"]
+        "en": [
+          "CEO",
+          "IoT Engineer"
+        ],
+        "ar": [
+          "الرئيسة التنفيذية",
+          "مهندسة إنترنت الأشياء"
+        ]
       },
-      "bio": { "en": "", "ar": "" },
+      "bio": {
+        "en": "",
+        "ar": ""
+      },
       "image": "/assets/team/pernille-jessen.svg",
       "imageAlt": {
         "en": "PJ monogram placeholder for Pernille Jessen; photograph forthcoming",
         "ar": "حروف PJ كصورة مؤقتة لبرنيل يسن؛ ستُضاف الصورة الشخصية لاحقاً"
       },
       "imageIsPlaceholder": true,
-      "links": []
+      "links": [
+        {
+          "id": "professional-profile",
+          "enabled": false,
+          "label": {
+            "en": "Professional profile",
+            "ar": "الملف المهني"
+          },
+          "url": ""
+        }
+      ],
+      "contact": {
+        "email": "",
+        "phone": ""
+      }
     },
     {
       "id": "sam-jessen",
       "enabled": true,
       "name": "Sam Jessen",
       "titles": {
-        "en": ["Network & Cybersecurity Engineer"],
-        "ar": ["مهندس شبكات وأمن سيبراني"]
+        "en": [
+          "Country Manager — Egypt",
+          "Network & Cybersecurity Engineer"
+        ],
+        "ar": [
+          "مدير الشركة في مصر",
+          "مهندس شبكات وأمن سيبراني"
+        ]
       },
-      "bio": { "en": "", "ar": "" },
+      "bio": {
+        "en": "",
+        "ar": ""
+      },
       "image": "/assets/team/sam-jessen.svg",
       "imageAlt": {
         "en": "SJ monogram placeholder for Sam Jessen; photograph forthcoming",
         "ar": "حروف SJ كصورة مؤقتة لسام يسن؛ ستُضاف الصورة الشخصية لاحقاً"
       },
       "imageIsPlaceholder": true,
-      "links": []
+      "links": [
+        {
+          "id": "professional-profile",
+          "enabled": false,
+          "label": {
+            "en": "Professional profile",
+            "ar": "الملف المهني"
+          },
+          "url": ""
+        }
+      ],
+      "contact": {
+        "email": "",
+        "phone": ""
+      }
     },
     {
       "id": "additional-team-member",
       "enabled": false,
       "name": "",
-      "titles": { "en": [], "ar": [] },
-      "bio": { "en": "", "ar": "" },
+      "titles": {
+        "en": [],
+        "ar": []
+      },
+      "bio": {
+        "en": "",
+        "ar": ""
+      },
       "image": "",
-      "imageAlt": { "en": "", "ar": "" },
+      "imageAlt": {
+        "en": "",
+        "ar": ""
+      },
       "imageIsPlaceholder": true,
-      "links": []
+      "links": [
+        {
+          "id": "professional-profile",
+          "enabled": false,
+          "label": {
+            "en": "Professional profile",
+            "ar": "الملف المهني"
+          },
+          "url": ""
+        }
+      ],
+      "contact": {
+        "email": "",
+        "phone": ""
+      }
     }
   ],
   "additionalContent": [
     {
       "id": "future-update",
       "enabled": false,
-      "title": { "en": "", "ar": "" },
-      "body": { "en": "", "ar": "" },
+      "title": {
+        "en": "",
+        "ar": ""
+      },
+      "body": {
+        "en": "",
+        "ar": ""
+      },
       "image": "",
-      "imageAlt": { "en": "", "ar": "" },
-      "link": { "label": { "en": "", "ar": "" }, "url": "" }
+      "imageAlt": {
+        "en": "",
+        "ar": ""
+      },
+      "link": {
+        "label": {
+          "en": "",
+          "ar": ""
+        },
+        "url": ""
+      }
     }
   ],
   "additionalLinks": [
     {
       "id": "future-link",
       "enabled": false,
-      "label": { "en": "", "ar": "" },
+      "label": {
+        "en": "",
+        "ar": ""
+      },
       "url": ""
+    }
+  ],
+  "platforms": [
+    {
+      "id": "microsoft-365",
+      "enabled": true,
+      "icon": "microsoft",
+      "label": {
+        "en": "Microsoft 365",
+        "ar": "Microsoft 365"
+      },
+      "summary": {
+        "en": "Productivity & collaboration",
+        "ar": "الإنتاجية والتعاون"
+      },
+      "serviceId": "microsoft-365",
+      "options": {
+        "en": [
+          "Email, Teams and SharePoint setup.",
+          "Identity, device policies and access planning.",
+          "Migration, adoption and user training.",
+          "Workflow and reporting options matched to your licences."
+        ],
+        "ar": [
+          "إعداد البريد وTeams وSharePoint.",
+          "تخطيط الهوية وسياسات الأجهزة والصلاحيات.",
+          "ترحيل البيانات والتدريب وتبني الأدوات.",
+          "خيارات سير العمل والتقارير حسب التراخيص."
+        ]
+      }
+    },
+    {
+      "id": "cisco",
+      "enabled": true,
+      "icon": "network",
+      "label": {
+        "en": "Cisco",
+        "ar": "Cisco"
+      },
+      "summary": {
+        "en": "Networks & connectivity",
+        "ar": "الشبكات والاتصال"
+      },
+      "serviceId": "networks-vpn",
+      "options": {
+        "en": [
+          "Review the existing network and device inventory.",
+          "Plan switching, Wi-Fi and network segmentation.",
+          "Scope secure remote access and configuration changes.",
+          "Document agreed settings and hand over to the team."
+        ],
+        "ar": [
+          "مراجعة الشبكة الحالية وجرد الأجهزة.",
+          "تخطيط المحولات وWi-Fi وتقسيم الشبكة.",
+          "تحديد نطاق الوصول الآمن عن بُعد وتغييرات الإعدادات.",
+          "توثيق الإعدادات المتفق عليها وتسليمها للفريق."
+        ]
+      }
+    },
+    {
+      "id": "splunk",
+      "enabled": true,
+      "icon": "splunk",
+      "label": {
+        "en": "Splunk",
+        "ar": "Splunk"
+      },
+      "summary": {
+        "en": "Logs & security insight",
+        "ar": "السجلات والرؤية الأمنية"
+      },
+      "serviceId": "cyber-defense",
+      "options": {
+        "en": [
+          "Plan log sources, access and retention requirements.",
+          "Define search, dashboard and alert use cases.",
+          "Scope integrations and alert triage workflows.",
+          "Document the agreed investigation and escalation steps."
+        ],
+        "ar": [
+          "تخطيط مصادر السجلات والصلاحيات ومتطلبات الاحتفاظ.",
+          "تحديد حالات استخدام البحث ولوحات العرض والتنبيهات.",
+          "تحديد نطاق التكاملات وإجراءات فرز التنبيهات.",
+          "توثيق خطوات التحقيق والتصعيد المتفق عليها."
+        ]
+      }
+    },
+    {
+      "id": "security-automation",
+      "enabled": true,
+      "icon": "workflow",
+      "label": {
+        "en": "SOAR & automation",
+        "ar": "SOAR والأتمتة"
+      },
+      "summary": {
+        "en": "Response workflows",
+        "ar": "إجراءات الاستجابة"
+      },
+      "serviceId": "cyber-defense",
+      "options": {
+        "en": [
+          "Identify repeatable security tasks and response playbooks.",
+          "Define human approval steps and response permissions.",
+          "Scope alert enrichment, ticketing and tool integrations.",
+          "Test the agreed workflow and record its activity."
+        ],
+        "ar": [
+          "تحديد المهام الأمنية المتكررة وإجراءات الاستجابة.",
+          "تحديد خطوات الموافقة البشرية وصلاحيات الاستجابة.",
+          "تحديد نطاق إثراء التنبيهات والتذاكر وتكامل الأدوات.",
+          "اختبار سير العمل المتفق عليه وتسجيل نشاطه."
+        ]
+      }
+    },
+    {
+      "id": "cloud-security",
+      "enabled": true,
+      "icon": "cloud-shield",
+      "label": {
+        "en": "Cloud security",
+        "ar": "أمن السحابة"
+      },
+      "summary": {
+        "en": "Posture & protection",
+        "ar": "الإعدادات والحماية"
+      },
+      "serviceId": "cyber-defense",
+      "options": {
+        "en": [
+          "Review cloud assets, identities and access permissions.",
+          "Prioritise configuration risks and protection gaps.",
+          "Scope workload protection, logging and alerts.",
+          "Agree recovery checks and ongoing review responsibilities."
+        ],
+        "ar": [
+          "مراجعة أصول السحابة والهويات وصلاحيات الوصول.",
+          "ترتيب مخاطر الإعدادات وفجوات الحماية حسب الأولوية.",
+          "تحديد نطاق حماية أحمال العمل والسجلات والتنبيهات.",
+          "الاتفاق على اختبارات الاستعادة ومسؤوليات المراجعة."
+        ]
+      }
+    },
+    {
+      "id": "microsoft-defender",
+      "enabled": true,
+      "icon": "shield",
+      "label": {
+        "en": "Microsoft Defender",
+        "ar": "Microsoft Defender"
+      },
+      "summary": {
+        "en": "Endpoint & threat protection",
+        "ar": "حماية الأجهزة والتهديدات"
+      },
+      "serviceId": "cyber-defense",
+      "options": {
+        "en": [
+          "Select the appropriate Defender products and licences.",
+          "Plan device onboarding and protection policies.",
+          "Review alert triage, investigation and response permissions.",
+          "Document the coverage and handover requirements."
+        ],
+        "ar": [
+          "اختيار منتجات Defender والتراخيص المناسبة.",
+          "تخطيط إضافة الأجهزة وسياسات الحماية.",
+          "مراجعة فرز التنبيهات والتحقيق وصلاحيات الاستجابة.",
+          "توثيق نطاق التغطية ومتطلبات التسليم."
+        ]
+      }
+    },
+    {
+      "id": "identity-access",
+      "enabled": true,
+      "icon": "identity",
+      "label": {
+        "en": "Identity & access",
+        "ar": "الهوية والوصول"
+      },
+      "summary": {
+        "en": "People & permissions",
+        "ar": "المستخدمون والصلاحيات"
+      },
+      "serviceId": "microsoft-365",
+      "options": {
+        "en": [
+          "Review accounts, groups and privileged roles.",
+          "Plan MFA and access policies for the agreed scope.",
+          "Organise joiner, mover and leaver processes.",
+          "Document access reviews and recovery responsibilities."
+        ],
+        "ar": [
+          "مراجعة الحسابات والمجموعات والأدوار ذات الصلاحيات العالية.",
+          "تخطيط MFA وسياسات الوصول للنطاق المتفق عليه.",
+          "تنظيم إجراءات الانضمام وتغيير الدور ومغادرة الموظف.",
+          "توثيق مراجعات الوصول ومسؤوليات الاستعادة."
+        ]
+      }
+    },
+    {
+      "id": "future-platform",
+      "enabled": false,
+      "icon": "cloud-shield",
+      "label": {
+        "en": "",
+        "ar": ""
+      },
+      "summary": {
+        "en": "",
+        "ar": ""
+      },
+      "serviceId": "",
+      "options": {
+        "en": [],
+        "ar": []
+      }
     }
   ]
 }

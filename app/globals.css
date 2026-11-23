@@ -165,3 +165,109 @@
  .nw-marketing .nw-featured-service-visual>img,.nw-marketing .nw-compact-service,.nw-marketing .nw-service-disclosure svg {transition:none}
  .nw-marketing .nw-featured-service:hover .nw-featured-service-visual>img,.nw-marketing .nw-compact-service:hover {transform:none}
 }
+
+/* Configured platforms, public contact preferences and social launch slots. */
+.nw-marketing .nw-platforms {margin-top:-24px;padding-bottom:85px}
+.nw-marketing .nw-platforms-heading {display:flex;justify-content:space-between;align-items:end;gap:35px;margin-bottom:26px}
+.nw-marketing .nw-platforms-heading .nw-eyebrow {font-size:11px;margin-bottom:10px;color:var(--clay)}
+.nw-marketing .nw-platforms-heading h2 {font-size:30px;font-weight:500;letter-spacing:-.8px;line-height:1.3}
+.nw-marketing .nw-platforms-heading>p {max-width:370px;font-size:16px;line-height:1.75;color:var(--muted)}
+.nw-marketing .nw-platform-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.nw-marketing .nw-platform-card {position:relative;display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:166px;padding:22px 17px 19px;border:1px solid var(--line);border-radius:3px;background:var(--soft);text-align:start;transition:background .2s,border-color .2s,transform .2s}
+.nw-marketing .nw-platform-card:hover {background:var(--paper);border-color:var(--clay);transform:translateY(-3px)}
+.nw-marketing .nw-platform-icon {display:flex;align-items:center;justify-content:flex-start;min-height:33px;margin-bottom:18px;color:var(--clay)}
+.nw-marketing .nw-platform-name {font-size:14px;font-weight:600;line-height:1.5;margin-bottom:5px}
+.nw-marketing .nw-platform-summary {font-size:12px;line-height:1.55;color:var(--muted)}
+.nw-marketing .nw-platform-open {position:absolute;top:16px;inset-inline-end:13px;color:var(--muted);opacity:.7}
+.nw-marketing .nw-cloud-security-icon {position:relative;display:inline-flex}
+.nw-marketing .nw-cloud-security-icon>svg:last-child {position:absolute;bottom:-3px;right:-5px;background:var(--soft);border-radius:3px}
+.nw-marketing .nw-platform-card:hover .nw-cloud-security-icon>svg:last-child {background:var(--paper)}
+.nw-marketing .nw-platform-dialog-intro {display:flex;align-items:center;gap:20px;margin-bottom:28px;padding:19px;background:var(--soft);border:1px solid var(--line)}
+.nw-marketing .nw-platform-dialog-icon {display:grid;place-items:center;min-width:55px;min-height:55px;color:var(--clay)}
+.nw-marketing .nw-platform-dialog-intro>p {font-size:18px;line-height:1.6;color:var(--muted)}
+.nw-marketing .nw-contact-people {margin-top:39px;padding-top:29px;border-top:1px solid #ffffff50}
+.nw-marketing .nw-contact-people-heading {display:flex;justify-content:space-between;align-items:center;gap:35px;margin-bottom:23px}
+.nw-marketing .nw-contact-people-heading h3 {font-size:23px;font-weight:500;letter-spacing:-.4px;line-height:1.4}
+.nw-marketing .nw-contact-people-heading p {font-size:14px;max-width:420px;margin:0;opacity:.9;line-height:1.7}
+.nw-marketing .nw-contact-person-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.nw-marketing .nw-contact-person {display:flex;align-items:center;gap:19px;padding:23px;border:1px solid #ffffff60;border-radius:3px;background:#ffffff0d;color:white;text-align:start;min-width:0;transition:background .2s,border-color .2s,transform .2s}
+.nw-marketing .nw-contact-person:hover {background:#ffffff1c;border-color:#ffffffb0;transform:translateY(-2px)}
+.nw-marketing .nw-contact-person:focus-visible {outline-color:white}
+.nw-marketing .nw-contact-avatar {display:grid;place-items:center;flex-shrink:0;width:75px;height:75px;overflow:hidden;background:#f1eadd;color:#355151;border:1px solid #ffffffa0;border-radius:50%;font-size:25px;font-weight:500;letter-spacing:-1px}
+.nw-marketing .nw-contact-avatar img {width:100%;height:100%;object-fit:cover;object-position:center 40%}
+.nw-marketing .nw-contact-person-copy {display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.nw-marketing .nw-contact-person-copy strong {font-size:22px;font-weight:500;line-height:1.3;letter-spacing:-.5px}
+.nw-marketing .nw-contact-person-copy>span {font-size:14px;line-height:1.5;opacity:.92}
+.nw-marketing .nw-contact-person-copy small {font-size:12px;line-height:1.5;opacity:.8;margin-top:3px}
+.nw-marketing .nw-contact-person>svg {margin-inline-start:auto}
+.nw-marketing .nw-person-dialog-profile {display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start;gap:26px;margin-bottom:28px}
+.nw-marketing .nw-person-dialog-profile figure {margin:0}
+.nw-marketing .nw-person-dialog-profile figure img {display:block;width:100%;height:160px;object-fit:cover;background:var(--soft);border-radius:3px}
+.nw-marketing .nw-person-dialog-profile figcaption {font-size:12px;line-height:1.5;color:var(--muted);margin-top:8px}
+.nw-marketing .nw-person-dialog-profile .nw-eyebrow {font-size:11px;color:var(--clay);letter-spacing:1.2px;margin-bottom:10px}
+.nw-marketing .nw-person-dialog-profile h3 {font-size:25px;letter-spacing:-.5px;font-weight:500;line-height:1.35}
+.nw-marketing .nw-person-dialog-profile p {font-size:16px;line-height:1.75;white-space:pre-line;color:var(--muted);margin-top:16px}
+.nw-marketing .nw-person-dialog-profile .nw-person-contact-note {font-size:14px;line-height:1.75}
+.nw-marketing .nw-person-contact-actions {display:grid;gap:12px}
+.nw-marketing .nw-person-contact-actions>a {display:flex;align-items:center;gap:15px;padding:17px 19px;border:1px solid var(--line);border-radius:3px;background:var(--soft);font-size:15px;line-height:1.5;min-width:0}
+.nw-marketing .nw-person-contact-actions>a:hover {border-color:var(--clay)}
+.nw-marketing .nw-person-contact-actions>a>svg {color:var(--clay)}
+.nw-marketing .nw-person-contact-actions strong {display:block;font-weight:500}
+.nw-marketing .nw-person-contact-actions small {display:block;color:var(--muted);font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.nw-marketing .nw-enquiry-preferences {margin-top:18px}
+.nw-marketing .nw-contact-preference-note {font-size:13px;line-height:1.7;color:var(--muted);padding:12px 14px;background:var(--soft);border-inline-start:2px solid var(--clay);margin:14px 0 18px}
+.nw-marketing .nw-social-strip {display:flex;align-items:center;justify-content:space-between;gap:35px;padding-top:29px;padding-bottom:31px;border-top:1px solid #ffffff25}
+.nw-marketing .nw-social-strip>div {max-width:230px;flex-shrink:0}
+.nw-marketing .nw-social-strip h3 {font-size:18px;font-weight:500;margin-bottom:8px}
+.nw-marketing .nw-social-strip p {font-size:13px;line-height:1.7;color:#aebfb9;margin:0}
+.nw-marketing .nw-social-channels {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:11px;list-style:none;margin:0;padding:0;flex:1;max-width:850px}
+.nw-marketing .nw-social-channels li {min-width:0}
+.nw-marketing .nw-social-channel {display:flex;align-items:center;justify-content:center;gap:11px;min-height:67px;width:100%;padding:14px 12px;border:1px solid #ffffff35;border-radius:3px;color:#ecf0ed;background:#ffffff04;font-size:13px;line-height:1.4}
+.nw-marketing a.nw-social-channel:hover {background:#ffffff0d;border-color:#dfa485;color:#fff}
+.nw-marketing .nw-social-channel small {display:block;font-size:11px;color:#c4b5a6;line-height:1.5;margin-top:4px}
+.nw-marketing .nw-social-channel.is-unconfigured {border-style:dashed;color:#bdccc5}
+.nw-marketing .nw-social-channel>svg:last-child:not(:first-child) {align-self:flex-start;display:none}
+.nw-marketing[dir=rtl] .nw-platforms-heading h2,.nw-marketing[dir=rtl] .nw-contact-people-heading h3,.nw-marketing[dir=rtl] .nw-person-dialog-profile h3 {letter-spacing:0}
+@media(max-width:1100px) {
+ .nw-marketing .nw-platform-grid {grid-template-columns:repeat(4,minmax(0,1fr))}
+ .nw-marketing .nw-platform-card {min-height:145px}
+ .nw-marketing .nw-contact-person {padding:20px;gap:15px}
+ .nw-marketing .nw-contact-avatar {width:64px;height:64px;font-size:23px}
+ .nw-marketing .nw-contact-person-copy strong {font-size:21px}
+ .nw-marketing .nw-social-strip {flex-wrap:wrap;gap:22px}
+ .nw-marketing .nw-social-strip>div {max-width:none;flex-basis:100%}
+ .nw-marketing .nw-social-channels {max-width:none}
+}
+@media(max-width:700px) {
+ .nw-marketing .nw-platforms {margin-top:-8px;padding-bottom:55px}
+ .nw-marketing .nw-platforms-heading {display:block;margin-bottom:23px}
+ .nw-marketing .nw-platforms-heading h2 {font-size:27px;letter-spacing:-.6px}
+ .nw-marketing .nw-platforms-heading>p {margin-top:15px;max-width:none;font-size:15px}
+ .nw-marketing .nw-platform-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+ .nw-marketing .nw-platform-card {min-height:155px;padding:21px 17px}
+ .nw-marketing .nw-platform-summary {font-size:13px}
+ .nw-marketing .nw-contact-people {margin-top:30px;padding-top:26px}
+ .nw-marketing .nw-contact-people-heading {display:block;margin-bottom:23px}
+ .nw-marketing .nw-contact-people-heading h3 {font-size:23px}
+ .nw-marketing .nw-contact-people-heading p {margin:10px 0 0;font-size:14px;max-width:none}
+ .nw-marketing .nw-contact-person-grid {grid-template-columns:1fr;gap:12px}
+ .nw-marketing .nw-contact-person {padding:20px;gap:15px}
+ .nw-marketing .nw-contact-person-copy strong {font-size:22px}
+ .nw-marketing .nw-contact-person-copy>span {font-size:14px}
+ .nw-marketing .nw-contact-person>svg {width:17px}
+ .nw-marketing .nw-social-channels {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+ .nw-marketing .nw-social-channel {justify-content:flex-start;padding:15px;font-size:14px;min-height:72px}
+ .nw-marketing .nw-social-channel small {font-size:12px}
+ .nw-marketing .nw-person-dialog-profile {display:block}
+ .nw-marketing .nw-person-dialog-profile figure {width:130px;margin-bottom:24px}
+ .nw-marketing .nw-person-dialog-profile figure img {height:135px}
+ .nw-marketing .nw-person-dialog-profile h3 {font-size:25px}
+ .nw-marketing .nw-person-contact-actions>a {padding:16px;font-size:14px}
+ .nw-marketing .nw-enquiry-preferences {grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce) {
+ .nw-marketing .nw-platform-card,.nw-marketing .nw-contact-person {transition:none}
+ .nw-marketing .nw-platform-card:hover,.nw-marketing .nw-contact-person:hover {transform:none}
+}
+
+.nw-marketing .nw-person-dialog-profile .nw-person-secondary-title {margin-top:9px;font-size:15px;line-height:1.6;color:var(--clay);font-weight:500}

@@ -25,6 +25,9 @@ Pushing to GitHub saves source changes. It does **not** automatically update the
 | Employee workspace guide | [docs/WORKSPACE.md](docs/WORKSPACE.md) |
 | Identity, permissions, database, audit and API details | [docs/BACKEND.md](docs/BACKEND.md) |
 | SEO decisions and public-launch configuration | [docs/SEO.md](docs/SEO.md) |
+| News publishers, refresh behaviour and topic filters | [docs/NEWS.md](docs/NEWS.md) |
+| Search intent, useful content and search-launch plan | [docs/SEO_AND_CONTENT_PLAN.md](docs/SEO_AND_CONTENT_PLAN.md) |
+| Prioritised future improvements and dependencies | [docs/FUTURE_ROADMAP.md](docs/FUTURE_ROADMAP.md) |
 | Image and logo sources | [docs/ASSETS.md](docs/ASSETS.md) |
 | Verification performed | [docs/VERIFICATION.md](docs/VERIFICATION.md) |
 
@@ -37,9 +40,12 @@ Pushing to GitHub saves source changes. It does **not** automatically update the
 - English and Arabic pages, including nine detailed service pages in both languages.
 - Featured **Microsoft 365 & Cloud** and **Cyber Defence** panels, with the remaining seven services in an expandable **More services** icon grid and existing detail/options views.
 - Searchable services, three industry views, a project brief builder, FAQ and contact details.
-- Public team cards for Pernille Jessen (**CEO; IoT Engineer**) and Sam Jessen (**Network & Cybersecurity Engineer**), with one replaceable monogram image per person.
+- Compact contact cards for Pernille Jessen (**CEO**, with **IoT Engineer** in the details) and Sam Jessen (**Country Manager — Egypt**, with **Network & Cybersecurity Engineer** in the details). Each opens a contact dialog with one replaceable image and a preferred-contact action.
+- Clickable Microsoft 365, Cisco, Splunk, SOAR and Cloud Security capability icons, with practical options and links into the existing service enquiry flow.
+- Footer social icon slots for Facebook, Instagram, TikTok, LinkedIn and YouTube. Unconfigured accounts are labelled **Coming soon** during private review and hidden at launch; approved account URLs are required before links become active.
 - Configurable additional phones, emails, locations, hours, links and content cards. Unprovided registration fields remain empty and hidden.
-- English IT and cybersecurity publisher headlines, original publication dates and explicit retrieval status.
+- English IT and cybersecurity headlines from eight selected publisher feeds, including Cisco Talos, Splunk advisories, SOAR, Unit 42 threat research and CERT-EU alerts. Search by text, publisher and topic in the news dialogs and at **[/insights](https://northwalleg-design-demo.dark-hawk-6582.chatgpt.site/insights)**.
+- Three original public security guides with official references, related service links and explicit review dates. Search metadata, structured data and sitemap entries are prepared for the future public launch.
 - Cairo/Copenhagen clocks, responsive layouts, keyboard focus and reduced-motion support.
 - A project brief can be downloaded. A signed-in member can save a fictional enquiry as a workspace ticket. The form sends no email.
 
@@ -100,6 +106,7 @@ Useful checks:
 ```sh
 npx tsc --noEmit
 node scripts/test-workspace.mjs
+npm run test:news
 npm run build
 ```
 
@@ -130,9 +137,12 @@ Do not edit or replay an already applied migration. Review the generated SQL and
 | Starting demo records | `lib/workspace-seed.ts` |
 | Employee handbook and official links | `lib/knowledge-resources.json` |
 | News publisher allowlist and RSS parser | `lib/news-source.ts` |
-| News API, runtime cache and fallback status | `app/api/news/route.ts` |
+| News API, shared runtime cache and fallback status | `app/api/news/route.ts`, `lib/news-service.ts` |
+| Headline search, publisher and topic filters | `components/news-explorer.tsx` |
+| Security news hub and original guides | `app/insights/`, `lib/insights-content.ts`, `components/insights*.tsx` |
+| Technology capability icons and social profile slots | `platforms`, `contact.socialLinks` in `lib/company-profile.json`; `components/public-icons.tsx` |
 | Saved headline fallback / refresh command | `lib/news-snapshot.json`, `npm run news:refresh` |
-| Page titles, social metadata | `app/layout.tsx`, `app/[locale]/services/[id]/page.tsx` |
+| Page titles, structured data and indexing policy | `lib/seo.ts`, `app/layout.tsx`, page metadata, robots/sitemap routes and `worker/index.ts` |
 | Repository verification workflow | `.github/workflows/check.yml` |
 
 Employee records, direct messages, notes and audit history are stored in the hosted D1 database. Employee photo bytes use protected R2 object storage through the `BUCKET` binding; member records retain photo metadata. Neither belongs in Git. A source ZIP or GitHub checkout is not a database or uploaded-photo backup. Local `.dev.vars`, `.wrangler/`, dependency folders and generated builds are excluded from normal source commits.
