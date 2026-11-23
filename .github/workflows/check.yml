@@ -45,6 +45,7 @@ jobs:
           NW_AUTH_TEST_DB_USER: northwall_ci
           NW_AUTH_TEST_DB_PASSWORD: ci-fixture-only
       - run: npm run audit:dependencies
+      - run: node scripts/test-sticky-header.mjs
       - run: npm run build
       - name: Build and exercise the exported native Next.js Hostinger server
         run: |
@@ -58,3 +59,10 @@ jobs:
         env:
           APP_ORIGIN: https://northwallegy.com
           PUBLIC_LAUNCH: 'false'
+      - name: Package Hostinger upload for manual deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: NorthWallEg-Hostinger-Sticky-Nav
+          path: ${{ runner.temp }}/NorthWallEg-Hostinger-Upload.zip
+          if-no-files-found: error
+          retention-days: 14

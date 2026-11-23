@@ -2,7 +2,7 @@
 .nw-insights * {box-sizing:border-box}.nw-insights a {color:inherit}.nw-insights h1,.nw-insights h2,.nw-insights h3,.nw-insights p {margin:0}.nw-insights button {font:inherit}.nw-insights :is(a,button):focus-visible {outline:3px solid #bf6246;outline-offset:5px}
 .nw-insights-skip {position:fixed;top:-80px;left:20px;z-index:99;padding:12px 18px;background:#fff}.nw-insights-skip:focus {top:10px}
 .nw-insights-review {font-size:.875rem;text-align:center;background:#f3eee7;color:#6a635c;padding:8px 18px}
-.nw-insights-header {max-width:1340px;margin:auto;padding:24px 38px;display:flex;justify-content:space-between;align-items:center;gap:28px}
+.nw-insights-header {max-width:1340px;margin:auto;padding:24px 38px;display:flex;justify-content:space-between;align-items:center;gap:28px;position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 5px 18px rgba(22,41,38,.08)}
 .nw-insights .nw-brand {display:flex;align-items:center;gap:11px;text-decoration:none;font-size:24px;font-weight:600;letter-spacing:-.8px;white-space:nowrap}
 .nw-insights .nw-brand-mark {background:#1b3439;color:#fff;width:44px;height:44px;padding:7px;display:flex;align-items:center;justify-content:center}
 .nw-insights .nw-brand-mark svg {width:100%;height:auto}.nw-insights .nw-brand-eg {color:var(--clay)}.nw-insights .nw-brand small {display:block;font-size:.6rem;letter-spacing:2px;font-weight:400;margin-top:1px;color:var(--muted)}
