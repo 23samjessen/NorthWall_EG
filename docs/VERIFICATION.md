@@ -1,6 +1,26 @@
 # Verification record — NorthWallEg source and deployment
 
-## Current source validation — 23 November 2026
+## Replacement native Next.js ZIP — 23 November 2026
+
+The replacement export builds at the project root and produces `.next/standalone/server.js`. It replaces the custom-listener dependency with native authenticated Route Handlers and independent server-page session checks. This addresses the supplied Hostinger failure where the successful build was under `.hostinger-app/.next` while the preset searched for `.next`.
+
+| Verification | Observed result | Scope |
+| --- | --- | --- |
+| Exported `npm run build` | Passed | Next.js 16.4.5 with webpack; root `.next`; TypeScript and page generation; explicit static/public asset inclusion |
+| Relocated standalone integration | **7 passed, 0 failed** | Generated `server.js` copied to a fresh directory; actual native HTTP routes |
+| Hostinger authentication/storage/policy tests | **60 passed, 2 skipped** locally | Existing auth and storage contracts plus six native-policy cases; real MySQL cases require the dedicated CI service |
+| Shared application checks | **142 passed** | 92 workspace/backend, 33 news, 17 HTTP/security |
+| Source TypeScript and diff checks | Passed | Nonincremental type checking; no whitespace errors |
+
+The relocated test runs once without private configuration and once with a test-only process preload. It verifies sign-in rendering without secrets, safe protected-service 503 responses, script/CSP nonce agreement, relocated assets, private cache headers, host/header forgery rejection, cross-origin 403 responses, and intact same-origin request bodies. It exercises the real temporary-password → email code → replacement-password flow, invitation enrollment/acceptance, separate owner approval, employee/admin separation, owner audit-chain verification, OTP replay denial and logout invalidation.
+
+The fixture uses the existing authentication service with transactional test storage, the real workspace implementation with in-memory SQLite, and synthetic email captured through process IPC. There is no public request, environment variable, or account setting that activates fixture identity. Test fixtures are not copied into the generated deployment output. These checks do not demonstrate real MySQL/SMTP connectivity, browser interaction, Hostinger account configuration or delivery of a real email code.
+
+Local checks used Node 24.22.3 and the installed dependency tree matching the unchanged package lockfile. A fresh offline install was unavailable because one package was missing from the local npm cache; the CI workflow performs a fresh install and includes dedicated MySQL integration. Do not treat historical dependency-audit results below as a new advisory scan: the supplied Hostinger log reported four moderate findings, and this revision does not apply an unchecked forced dependency upgrade.
+
+The ZIP contains no live database, employee portraits, production credentials or actual owner password. Hostinger deployment and private setup remain separate required account actions. The following entries retain evidence from earlier revisions.
+
+## Earlier source validation — 23 November 2026
 
 These results describe the current source. The existing private Site, trusted platform gateway, D1 records and private R2 objects are retained. Preparing the separate Node target has not deployed the application to Hostinger, provisioned a real owner password, connected SMTP delivery or transferred production data.
 

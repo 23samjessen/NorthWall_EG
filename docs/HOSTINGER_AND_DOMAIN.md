@@ -12,28 +12,27 @@ Your screenshot showing **Coming soon** is Hostinger's placeholder. Your File Ma
 
 ## 1. Application and build settings
 
-**Corrected upload profile:** `hostinger/package-upload.py` exports a flat ZIP whose default build/start scripts call the Hostinger target directly. It includes `START_HERE_HOSTINGER.md` and `.npmrc` installation guards. In that ZIP, `npm run build` and `npm start` are equivalent to the explicit Hostinger commands in the table below. The exported profile still requires **Other**; selecting the Next.js preset would bypass the custom entry. `NORTHWALL_RUNTIME` is optional for this profile.
+**Replacement upload profile:** `hostinger/package-upload.py` exports a flat ZIP containing a standard Next.js application. Its build writes **`.next` at the project root**, including `.next/standalone/server.js`. Authentication and workspace protection run in native Route Handlers and server-page guards. The generated output includes public/static assets and private maintenance commands. See `START_HERE_HOSTINGER.md` in the ZIP or `hostinger/UPLOAD_NEXT_README.md` in the Git source.
 
-Connect the existing repository directly and grant access only to 23samjessen/NorthWall_EG if GitHub offers repository selection. The supplied source ZIP is an alternative, with package.json at its root. Do not upload node_modules, private environment files or generated builds.
-
-| Hostinger setting | Value |
+| Hostinger setting | Value for the replacement ZIP |
 | --- | --- |
 | Website type | Node.js web application |
-| Framework preset | **Other**, so the custom authenticated entry is used |
-| Node version | **24**; local checks used 24.22.3 |
+| Framework preset | **Next.js** |
+| Node version | **24.x recommended**; 22.13.0 or later is supported |
 | Package manager | npm |
-| Root directory | `.` — directory containing package.json |
-| Branch | `main` |
+| Root directory | `./` — directory containing package.json |
 | Install command, if requested | `npm ci` |
-| Build command | `npm run build:hostinger` |
-| Output directory, if requested | `.hostinger-app` |
-| Entry file | `hostinger/server.mjs`, relative to project root |
-| Start command, if requested | `npm run start:hostinger` |
-| Internal port | `3000` |
+| Build command | `npm run build` |
+| Output directory | **`.next`** |
+| Entry file | Automatic/default; leave empty |
+| Start command, if requested | `npm start` |
+| Internal port | Provider-assigned `PORT`, default 3000 |
 
-The build creates .hostinger-app/.next, copies public assets and prepares Node-specific bindings. Keep the generated application directory alongside the root hostinger entry and installed dependencies. Do not select static export or bypass the custom entry with next start: protected identity comes from its verified request context.
+Upload the replacement archive through **Deployments → Redeploy → Upload new files**. Do not reuse the older ZIP. The shared Git repository's default remains the Sites/Worker preview; a direct source download is not the transformed upload. To use Git auto-deployment, maintain the generated native profile in a deployment branch rather than connecting the shared source with the wrong preset. No Git auto-deployment is created by this ZIP.
 
-The build explicitly runs **next build --webpack**. Hostinger requires webpack for Next.js 16.3.3 and newer on its current build servers; this project uses 16.4.5. [2] Next receives the public HTTPS origin/port 443 while the separate HTTP listener uses internal port 3000. An actual built-Next test verifies this distinction.
+The build runs **next build --webpack**. Hostinger requires webpack for Next.js 16.3.3 and newer on the build servers described in its guide; this project uses 16.4.5. [2] Native routes reconstruct the configured canonical HTTPS origin and do not trust visitor-supplied forwarding or identity headers. Each protected handler verifies its cookie session before accessing data.
+
+**Legacy custom-server target:** existing deployments can still export it explicitly with `--profile custom-server`. That separate profile uses Other, `.hostinger-app` and `hostinger/server.mjs`. These older settings do not apply to the replacement Next.js ZIP.
 
 The exact plan and resources still need confirmation. A domain alone does not supply a running application, database or sending mailbox. Check the current account before buying an upgrade.
 
@@ -51,7 +50,7 @@ Hostinger replaces deployment directories during redeployment. Records and priva
 
 Attach the intended domain, enable its valid certificate and **Force HTTPS**, then verify that HTTP redirects to HTTPS and the certificate is valid. This can be checked while Hostinger's placeholder is still displayed; the NorthWallEg server does not need to be running for the hosting-level check. The app adds HSTS but cannot issue or renew certificates. [5]
 
-Only after that verification set **EDGE_HTTPS_CONFIRMED=true**. Setup, preflight and server startup all read this setting and refuse to proceed while it is false or missing. Complete this hosting step before the commands in section 4.
+Only after that verification set **EDGE_HTTPS_CONFIRMED=true**. Setup, preflight and private-service initialization require this setting. The native server can render sign-in before setup, but authentication/workspace APIs remain unavailable while private configuration is incomplete. Complete this hosting step before the commands in section 4.
 
 The application uses a fixed canonical origin and ignores visitor-selected proxy/identity headers. Hostinger warns that forwarding headers can be forged outside its trusted CDN path. [5]
 
@@ -61,7 +60,7 @@ Use Hostinger's **Environment Variables** settings. The blank template is hostin
 
 | Setting | Value or purpose |
 | --- | --- |
-| NORTHWALL_RUNTIME | `hostinger`; also selects the Node variant for ordinary npm build/start |
+| NORTHWALL_RUNTIME | Not required by the replacement ZIP; only the legacy Git-source selector uses this |
 | NODE_ENV | `production` |
 | PORT | `3000` |
 | APP_ORIGIN | `https://northwallegy.com` |
@@ -89,18 +88,20 @@ APP_ORIGIN and PUBLIC_LAUNCH must match the build manifest; rebuild after changi
 
 ## 4. Initialize storage and provision the owner
 
-Open the uploaded or cloned project through a **private Node application terminal/SSH session** with Node 24. Work from the application source directory containing package.json. File Manager's public_html view is not a terminal and does not run these commands. Keep the same private configuration as the managed application, including the HTTPS confirmation completed above.
+Open the uploaded application through a **private Node application terminal/SSH session** with Node 24. Work from the deployed directory containing `hostinger/setup.mjs`, or from the full exported source directory containing package.json. File Manager's public_html view is not a terminal and does not run these commands. Keep the same private configuration as the managed application, including the HTTPS confirmation completed above.
 
-The source must be available in that private application environment before provisioning. If Hostinger's importer automatically builds and attempts a start before you can run setup, that first start cannot succeed against an empty database. Obtain terminal/SSH access to the source, complete this section and preflight, then **redeploy**. The server checks its existing tables before listening; it does not automatically create tables or an owner during startup.
+The deployed files must be available in that private application environment before provisioning. The native server and sign-in page can start before setup; authentication and workspace APIs return a controlled unavailable response until the database and sending provider are ready. Complete this section and preflight, then retry sign-in. Redeploy if you changed environment settings. The server never creates tables or an owner automatically.
 
 Hostinger's application environment settings may not be supplied to an SSH shell automatically. If needed, use a private environment file outside the project and all public/deployment directories; never include it in the ZIP.
 
-From the directory containing package.json:
+From the deployed directory containing the maintenance commands:
 
 ```bash
-npm ci
-npm run hostinger:setup
+node hostinger/setup.mjs
+node hostinger/check.mjs --smtp
 ```
+
+In the complete source project, install dependencies with `npm ci`; the equivalent setup command is `npm run hostinger:setup`.
 
 If your SSH shell does not already have the application settings, replace the example path below with your actual private environment-file path and use Node's environment-file option for setup:
 
@@ -134,7 +135,7 @@ npm run hostinger:check -- --smtp
 
 Preflight checks configuration, tables, packet capacity and owner provisioning. The optional SMTP check authenticates to the mailbox without sending email; real sign-in is still needed to test delivery.
 
-Once HTTPS verification, private settings, schema creation, owner provisioning and preflight are complete, choose **Deploy** or **Redeploy** in Hostinger. Keep the section 1 build command `npm run build:hostinger`, entry `hostinger/server.mjs` and start command `npm run start:hostinger`. Hostinger runs the build and manages the server process; a second server does not need to be started from SSH.
+Choose **Deploy** or **Redeploy** with the section 1 Next.js preset, build `npm run build`, output `.next` and automatic entry. If shown, the start command is `npm start`. Hostinger runs the generated standalone server; a second listener does not need to be started from SSH. Complete HTTPS, private settings, schema, owner provisioning and preflight before relying on sign-in.
 
 If an earlier start failed because these prerequisites were missing, redeploy after completing them. A successful source upload or build alone does not confirm that the server, database or email delivery is working. **Actual setup and deployment in your Hostinger account remain pending.**
 
@@ -169,7 +170,7 @@ Run bounded authentication cleanup through an available Hostinger cron/maintenan
 npm run hostinger:setup -- --cleanup
 ```
 
-Each call removes up to 1,000 expired records per category and authentication events older than 30 days. Startup also performs one bounded cleanup. Workspace audit history is not deleted. There is no always-running background worker.
+Each call removes up to 1,000 expired records per category and authentication events older than 30 days. The first successful private-service initialization also performs one bounded cleanup. Workspace audit history is not deleted. There is no always-running background worker.
 
 After company registration, complete legal/tax/contact fields in lib/company-profile.json, set PUBLIC_LAUNCH=true, rebuild and deploy. Verify canonical URLs, sitemap, robots, contact details and HTTPS before submitting the sitemap to Google Search Console. Employee routes remain private/noindex. No search-ranking or traffic guarantee is made.
 
