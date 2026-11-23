@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from native_profile import create_next_profile
 
 
 MAX_FILES = 10000
@@ -131,6 +132,8 @@ def main():
     parser.add_argument('--output', required=True, help='Destination ZIP path.')
     parser.add_argument('--source', default=str(Path(__file__).resolve().parent.parent),
                         help='Git project root; defaults to this script\'s project.')
+    parser.add_argument('--profile', choices=['nextjs', 'custom-server'], default='nextjs',
+                        help='Default: standard Next.js. custom-server preserves the legacy Other preset.')
     args = parser.parse_args()
     source = Path(args.source).expanduser().absolute()
     if source.is_symlink():
@@ -191,14 +194,20 @@ def main():
     package = json.loads(files['package.json'][0])
     if not isinstance(package.get('scripts'), dict):
         raise PackageError('package.json must contain a scripts object.')
-    package['scripts']['build'] = 'node hostinger/build.mjs'
-    package['scripts']['start'] = 'node hostinger/server.mjs'
-    files['package.json'] = ((json.dumps(package, indent=2, ensure_ascii=False) + '\n').encode(), 0o644)
     files['.npmrc'] = (b'include[]=dev\ninclude[]=optional\n', 0o644)
-    files['START_HERE_HOSTINGER.md'] = (files['hostinger/UPLOAD_README.md'][0], 0o644)
-    profile = {'profile': 'hostinger-node', 'source_commit': commit, 'source_dirty': dirty,
-               'framework': 'Other', 'node': '24', 'build': 'npm run build',
-               'output': '.hostinger-app', 'entry': 'hostinger/server.mjs', 'start': 'npm start'}
+    if args.profile == 'nextjs':
+        create_next_profile(files)
+        profile = {'profile': 'hostinger-nextjs', 'source_commit': commit, 'source_dirty': dirty,
+                   'framework': 'Next.js', 'node': '24', 'build': 'npm run build',
+                   'output': '.next', 'entry': None, 'start': 'npm start'}
+    else:
+        package['scripts']['build'] = 'node hostinger/build.mjs'
+        package['scripts']['start'] = 'node hostinger/server.mjs'
+        files['package.json'] = ((json.dumps(package, indent=2, ensure_ascii=False) + '\n').encode(), 0o644)
+        files['START_HERE_HOSTINGER.md'] = (files['hostinger/UPLOAD_README.md'][0], 0o644)
+        profile = {'profile': 'hostinger-node', 'source_commit': commit, 'source_dirty': dirty,
+                   'framework': 'Other', 'node': '24', 'build': 'npm run build',
+                   'output': '.hostinger-app', 'entry': 'hostinger/server.mjs', 'start': 'npm start'}
     files['hostinger-upload.json'] = ((json.dumps(profile, indent=2) + '\n').encode(), 0o644)
 
     target.parent.mkdir(parents=True, exist_ok=True)

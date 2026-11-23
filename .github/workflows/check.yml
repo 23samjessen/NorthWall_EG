@@ -46,9 +46,9 @@ jobs:
           NW_AUTH_TEST_DB_PASSWORD: ci-fixture-only
       - run: npm run audit:dependencies
       - run: npm run build
-      - name: Build and verify the actual Hostinger upload profile
+      - name: Build and exercise the exported native Next.js Hostinger server
         run: |
-          python3 hostinger/package-upload.py --output "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip"
+          python3 -B hostinger/package-upload.py --profile nextjs --output "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip"
           mkdir "$RUNNER_TEMP/northwall-upload-check"
           unzip -q "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip" -d "$RUNNER_TEMP/northwall-upload-check"
           cd "$RUNNER_TEMP/northwall-upload-check"

@@ -7,11 +7,13 @@ The current private Sites demo still uses its existing hosting identity gateway.
 Real Hostinger database setup, SMTP configuration, account provisioning and delivery verification have **not** been completed. No real authentication emails have been sent, and no supplied temporary password is stored in this repository, archive or documentation.
 Follow [HOSTINGER_AND_DOMAIN.md](HOSTINGER_AND_DOMAIN.md) for exact deployment settings and setup steps; keep the review Site private until the deployment checks are complete.
 
+The replacement ZIP builds the service into native Next.js Route Handlers. Every workspace/photo handler verifies the session cookie itself, then establishes an AsyncLocalStorage identity context for the existing backend. Server-rendered protected pages independently verify their session. The generated standalone server does not require a separate custom HTTP entry.
+
 ## HTTPS and trust boundary
 
 - The Hostinger server requires a canonical HTTPS origin. All authentication writes require the exact origin, JSON and bounded request bodies; cookies require HTTPS.
 - Deployment still needs a valid automatically renewed certificate, HTTP-to-HTTPS navigation redirects, correctly configured HSTS and no mixed content. Never accept credentials over HTTP.
-- Trust forwarding headers only through the configured proxy. The auth service ignores visitor-supplied forwarded-IP headers and uses the server's trusted client-IP context, or a shared fallback bucket.
+- Native Next.js handlers have no verified peer socket address. They ignore visitor-supplied forwarded-IP headers and use the authentication service's conservative shared-client rate-limit bucket, alongside account and global limits. The legacy custom listener can additionally supply its actual peer socket address.
 - Never trust visitor-supplied `oai-authenticated-*` headers. The Hostinger server resolves its own completed auth session before supplying identity to the workspace.
 
 ## Authentication and employee authorization are separate

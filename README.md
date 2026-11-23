@@ -72,17 +72,19 @@ The administrator starts the labelled sample workspace once. Sample colleagues a
 
 ## Sign-in and passwords
 
-**Requested Hostinger login:** password plus a one-time verification code, email by default or SMS to a verified phone after a delivery provider is configured. This is a destination requirement, **not an enabled feature in this revision**. See [Authentication and MFA](docs/AUTHENTICATION_AND_MFA.md) for the exact flow and security limits.
+**Implemented Hostinger login:** password followed by an email verification code, with mandatory replacement of an initial temporary password. The replacement upload uses native Next.js routes and the existing authentication service. Real MySQL, SMTP, HTTPS and owner provisioning are still required in the hosting account. SMS is not implemented. See [Authentication and MFA](docs/AUTHENTICATION_AND_MFA.md).
 
-There is no shared NorthWallEg demo password. The hosted site uses the owner's approved sign-in identity; the backend then checks active employee membership. Initial administrator setup is controlled by `ADMIN_EMAILS`. After setup, only the owner can invite colleagues in **Admin settings → Team**. They must accept their invitation and receive a separate owner approval before access; the owner can later grant admin roles. See [User access](docs/USER_ACCESS.md).
+There is no shared NorthWallEg demo password. The private Sites preview uses its hosting gateway and `ADMIN_EMAILS`; the Hostinger version uses `OWNER_EMAIL` and private offline owner provisioning. In both, the backend checks active employee membership. Only the owner can invite colleagues in **Admin settings → Team**. They must accept their invitation and receive separate owner approval before access; the owner can later grant admin roles. See [User access](docs/USER_ACCESS.md).
 
-The earlier browser-only prototype's sample username/password does not apply. Change the real sign-in password in the identity provider's own account settings. This repository contains no passwords, password hashes or production API keys.
+The earlier browser-only prototype's sample username/password does not apply. Sites credentials are managed at its identity provider; Hostinger passwords are managed by the local authentication service and documented recovery commands. This repository contains no production passwords, credential verifiers or API keys.
 
-Adding a member does not send email and does not change the private site's audience. Both site access and employee membership must be granted before a colleague can enter.
+Adding a workspace invitation does not itself send email. Hostinger enrollment sends a verification code only after an eligible invitee starts enrollment. Sites audience access remains a separate requirement for the private Sites preview.
 
 Public team cards do not create employee accounts. No sign-in email has been supplied for Pernille, so her public profile is not an invitation or an administrator account. Each employee edits their own profile; only the owner manages account invitations, approvals and roles.
 
-## Quick commands
+## Sites preview commands (Git source)
+
+These commands apply to the shared Git source and its Worker/D1 preview. For the exported Hostinger ZIP, use `START_HERE_HOSTINGER.md`; its ordinary build/start commands target Next.js instead.
 
 Use Node.js **22.13.0 or newer**. Run commands from this project's root.
 
@@ -154,7 +156,7 @@ Do not edit or replay an already applied migration. Review the generated SQL and
 | Page titles, structured data and indexing policy | `lib/seo.ts`, `app/layout.tsx`, page metadata, robots/sitemap routes and `worker/index.ts` |
 | Repository verification workflow | `.github/workflows/check.yml` |
 
-Employee records, direct messages, notes and audit history are stored in the hosted D1 database. Employee photo bytes use protected R2 object storage through the `BUCKET` binding; member records retain photo metadata. Neither belongs in Git. A source ZIP or GitHub checkout is not a database or uploaded-photo backup. Local `.dev.vars`, `.wrangler/`, dependency folders and generated builds are excluded from normal source commits.
+In the private Sites preview, employee records, direct messages, notes and audit history use D1, and photo bytes use protected R2 storage. The Hostinger version stores workspace records, authentication and private photo BLOBs in MySQL. Neither deployment's runtime records belong in Git. A source ZIP or GitHub checkout is not a database or uploaded-photo backup. Local `.dev.vars`, `.wrangler/`, dependency folders and generated builds are excluded from normal source commits.
 
 ## Review boundaries
 
@@ -166,20 +168,24 @@ ISO entries are summaries and official catalogue links. Licensed standards are n
 
 The hosted review site remains private and intentionally `noindex`. The design has been approved; company registration, the final domain and a launch instruction are still required before opening the marketing website. Keep employee access protected after launch. SEO foundations cannot guarantee a first-place Google ranking.
 
-A different hosting provider requires a verified authentication integration. The current backend trusts only identity headers inserted by the supported hosting gateway. See `docs/BACKEND.md` before moving the app to another server.
+The Sites version uses identity inserted by its trusted hosting gateway. Native Hostinger handlers independently verify opaque session cookies and establish a process-local request context before calling the same workspace logic. Visitor-supplied identity headers never authenticate the Hostinger application. See `docs/BACKEND.md` before adding another hosting provider.
 
 ## Hostinger command reference
+
+Run these commands in the **exported Next.js upload project**, with the documented private server environment for setup and preflight:
 
 ```bash
 npm ci
 npm run hostinger:setup
 npm run hostinger:check -- --smtp
-npm run build:hostinger
-npm run start:hostinger
+npm run build
+npm start
 ```
 
 Setup requires private environment settings and a private terminal for the hidden owner-password prompt. Do not run setup against an unrelated database. The default owner username is **23samjessen@gmail.com**; no actual credential is shipped. `PUBLIC_LAUNCH=false` keeps the destination behind sign-in until the owner decides to launch. See the hosting guide before using these commands.
 
 ## Corrected Hostinger upload ZIP
 
-Run `npm run hostinger:package -- --output /absolute/path/NorthWallEg-Hostinger-Upload.zip` to create the Hostinger-specific upload profile. It sets the exported default `build` and `start` scripts to the Node target, includes build dependencies even with `NODE_ENV=production`, and adds `START_HERE_HOSTINGER.md`. Choose **Other** in Hostinger with output `.hostinger-app` and entry `hostinger/server.mjs`. The repository retains its Sites preview default; source download and deployable upload profile are deliberately distinguished. No real credentials or runtime records are exported.
+Run `npm run hostinger:package -- --output /absolute/path/NorthWallEg-Hostinger-Nextjs.zip` to create the replacement upload profile. It builds standard Next.js at the upload root, includes build dependencies even with `NODE_ENV=production`, and adds `START_HERE_HOSTINGER.md`. Choose **Next.js**, output **`.next`**, build **`npm run build`**, and the automatic/default entry. The generated server is `.next/standalone/server.js`; public/static assets and maintenance commands are included in that output. The full instructions are [hostinger/UPLOAD_NEXT_README.md](hostinger/UPLOAD_NEXT_README.md).
+
+The Git source retains its Sites preview default. Export the profile before uploading; a GitHub source download is not the transformed Hostinger project. The old custom-server target is retained only for existing deployments and can be exported explicitly with `--profile custom-server`. No real credentials or runtime records are exported.
