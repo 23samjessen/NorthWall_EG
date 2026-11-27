@@ -11,7 +11,8 @@ export async function initializeAuthSchema(pool) {
   if (!pool?.execute) throw new Error('A MySQL promise pool is required.');
   const sql = await readFile(new URL('./schema.sql', import.meta.url), 'utf8');
   // This is a fixed, repository-owned DDL file, never request input.
-  for (const statement of sql.split(';').map(s => s.trim()).filter(Boolean)) await pool.execute(statement);
+  const statements=sql.replace(/^\s*--[^\n]*$/gm,'').split(';').map(s=>s.trim()).filter(Boolean);
+  for (const statement of statements) await pool.execute(statement);
 }
 
 export function createMySqlAuthStore(pool) {
