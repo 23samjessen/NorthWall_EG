@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import './globals.css';
 import { siteConfig } from '@/lib/site-config';
 import { jsonLd, organizationSchema, publicRobots } from '@/lib/seo';
@@ -14,5 +15,8 @@ export const metadata: Metadata = {
 };
 export default async function RootLayout({children}:{children:React.ReactNode}) {
   const nonce = await scriptNonce();
-  return <html lang="en"><body><script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(organizationSchema())}}/>{children}</body></html>;
+  const requestHeaders = await headers();
+  const marketingEligible = requestHeaders.get('x-northwall-marketing-eligible') === '1';
+  const marketingVendors = (requestHeaders.get('x-northwall-marketing-vendors') || '').split(',').filter(value => value === 'meta' || value === 'tiktok').join(',');
+  return <html lang="en"><head><meta name="northwall-marketing-eligible" content={marketingEligible ? '1' : '0'}/><meta name="northwall-marketing-vendors" content={marketingVendors}/></head><body><script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{__html:jsonLd(organizationSchema())}}/>{children}</body></html>;
 }

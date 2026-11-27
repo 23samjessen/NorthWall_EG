@@ -36,7 +36,7 @@ const getInvitation=async (email,context={})=>{
   if(anchor!==null && (typeof anchor!=='string'||!anchor))return null;
   return {memberId:member.id,invitationId:member.onboarding.invitationId,expiresAt:member.onboarding.expiresAt,status:'invited',identityAnchorUserId:anchor};
 };
-const auth=createAuthService({pool,origin:config.origin,secret:config.secret,ownerEmail:config.ownerEmail,sendCode:mail.sendCode,getInvitation});
+const auth=createAuthService({pool,origin:config.origin,secret:config.secret,ownerEmail:config.ownerEmail,sendCode:mail.sendCode,sendReset:mail.sendPasswordReset,getInvitation});
 await auth.cleanup();
 // Next constructs app-route Request.url from this public port. The separate HTTP
 // listener below uses Hostinger's internal port3000 behind its TLS terminator.

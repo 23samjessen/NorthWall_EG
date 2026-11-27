@@ -1,3 +1,4 @@
+import { requireCompanyAccess } from '@/hostinger/native/site-auth';
 import type { Metadata } from 'next';
 import { BookOpen, ShieldCheck, Radio, Plus } from 'lucide-react';
 import InsightsShell from '@/components/insights-shell';
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl('/insights') },
   openGraph: { ...openGraphBase, type: 'website', title: 'Security insights | NorthWallEg', description: 'Verified publisher headlines and practical security guidance for growing teams.', url: absoluteUrl('/insights') },
 };
-export default async function InsightsPage() {
+export default async function InsightsPage() { await requireCompanyAccess('/insights');
   const nonce = await scriptNonce();
   const news = await getNews();
   const schema = { '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'NorthWallEg security insights', url: absoluteUrl('/insights'), inLanguage: 'en', description: 'Selected publisher headlines and original practical IT security guides.', publisher: { '@id': absoluteUrl('/#organization') }, hasPart: insightGuides.map(guide => ({ '@type': 'Article', headline: guide.title, url: absoluteUrl(`/insights/${guide.slug}`) })) };

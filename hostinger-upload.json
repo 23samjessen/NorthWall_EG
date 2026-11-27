@@ -1,0 +1,14 @@
+{
+  "profile": "hostinger-nextjs",
+  "source_commit": "3a6492953386eec605e8d452f0010b3716230dad",
+  "source_dirty": true,
+  "framework": "Next.js",
+  "node": "24",
+  "build": "npm run build",
+  "output": ".next",
+  "entry": null,
+  "start": "npm start",
+  "release": "2026-11-27-password-recovery-google-reviews",
+  "based_on": "NorthWallEg-Hostinger-Marketing-Consent.zip",
+  "notes": "Google Reviews icon requires verified review URL; password reset requires schema-only migration."
+}

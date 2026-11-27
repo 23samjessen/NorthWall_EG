@@ -1,3 +1,5 @@
+> **Google Reviews (27 November 2026):** Configure `contact.googleReviews.enabled` and the approved review URL in `lib/company-profile.json` as described in `docs/PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md`. No rating is fabricated.
+
 # Editing public company details
 
 Edit **`lib/company-profile.json`** for the public company information, contact details and team. It contains public presentation content only. Do not put passwords, API keys, internal personnel details or private employee data in this file.

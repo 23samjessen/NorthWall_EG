@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { env, trustedIdentity } from '../hostinger/runtime-env';
 import type { Member, MemberOnboarding, OnboardingResponse, WorkspaceState, WorkspaceResponse, AuditEntry, Ticket, Comment, Message, Note, CalendarEvent, CustomField, AutomationRule } from './workspace-types';
 import { emptyState, demoState } from './workspace-seed';
 import resources from './knowledge-resources.json';
@@ -31,13 +31,10 @@ const id=(prefix:string)=>`${prefix}_${crypto.randomUUID()}`;
 const iso=()=>new Date().toISOString();
 const fail=(code:string,message:string,status=400):never=>{throw new ApiError(status,code,message);};
 const db=():D1Database=>{if(!env.DB)throw new ApiError(503,'storage_unavailable','Workspace storage is not configured.');return env.DB;};
-export function requestIdentity(request:Request):Identity {
-  const userId=request.headers.get('oai-authenticated-user-id');
-  const email=request.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();
-  if(!userId||!email)throw new ApiError(401,'sign_in_required','Sign in to access the employee workspace.');
-  let name=request.headers.get('oai-authenticated-user-full-name')||email.split('@')[0];
-  if(request.headers.get('oai-authenticated-user-full-name-encoding')==='percent-encoded-utf-8'){try{name=decodeURIComponent(name);}catch{name=email.split('@')[0];}}
-  return {userId,email,name};
+export function requestIdentity(_request:Request):Identity {
+  const identity=trustedIdentity();
+  if(!identity)throw new ApiError(401,'sign_in_required','Sign in to access the employee workspace.');
+  return identity;
 }
 function bootstrapAllowed(identity:Identity){
   const raw=(env as unknown as Record<string,unknown>).ADMIN_EMAILS;

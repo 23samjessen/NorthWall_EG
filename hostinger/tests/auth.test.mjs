@@ -17,7 +17,7 @@ async function fixture({temporary=false,deliveryFails=false,seedOwner=true}={}) 
   let now=Date.parse('2035-01-01T10:00:00Z');
   const secret=randomBytes(32).toString('hex');
   if(seedOwner)store.data.accounts.set('owner-account',{id:'owner-account',userId:'reviewed-owner-fixture-id',email:OWNER,name:'Synthetic owner',passwordHash:await sharedHash,mustChangePassword:temporary,temporaryExpiresAt:temporary?now+AUTH_POLICY.temporaryPasswordMs:null,enabled:true,passwordVersion:1,createdAt:now,updatedAt:now});
-  const options={store,origin:ORIGIN,secret,ownerEmail:OWNER,clock:()=>now,sendCode:async message=>{if(deliveryFails)throw new Error('Synthetic transport failure');mail.push({...message});},getInvitation:async(email,context)=>{lookupCalls.push({email,lock:!!context?.lock,connection:!!context?.connection});return structuredClone(invitations.get(email)||null);}};
+  const options={store,origin:ORIGIN,secret,ownerEmail:OWNER,clock:()=>now,minResetResponseMs:0,sendCode:async message=>{if(deliveryFails)throw new Error('Synthetic transport failure');mail.push({...message});},getInvitation:async(email,context)=>{lookupCalls.push({email,lock:!!context?.lock,connection:!!context?.connection});return structuredClone(invitations.get(email)||null);}};
   const service=createAuthService(options);
   return{service,store,mail,invitations,lookupCalls,options,advance:ms=>{now+=ms;},time:()=>now,invite(email,extra={}){invitations.set(email,{memberId:`member-${email}`,invitationId:`invite-${email}`,status:'invited',expiresAt:new Date(now+7*86400000).toISOString(),identityAnchorUserId:null,...extra});}};
 }
@@ -301,4 +301,98 @@ test('stale logout cannot revoke sessions created after offline password recover
 test('expired challenges and authentication evidence are removed by bounded maintenance',async()=>{
   const f=await fixture(),c=await loginToCode(f);assert.ok(f.store.data.flows.size);
   f.advance(31*86400000);await f.service.cleanup();assert.equal(f.store.data.flows.size,0);assert.equal(f.store.data.events.length,0);assert.equal(await c.identity(),null);
+});
+
+test('forgot password has uniform responses for known, missing and disabled accounts; tokens are hashed',async()=>{
+  const f=await fixture(), client=new Client(f);
+  const delivered=[];
+  const service=createAuthService({...f.options,sendReset:async message=>delivered.push(message)});
+  const c=new Client(f,{service});
+  const absent=await c.call('forgot',{email:'nobody@example.test'});
+  const known=await c.call('forgot',{email:OWNER});
+  assert.equal(absent.status,200);assert.equal(known.status,200);
+  assert.deepEqual(absent.data,known.data);
+  assert.equal(delivered.length,1);assert.equal(delivered[0].to,OWNER);
+  const sent=new URL(delivered[0].url);
+  assert.equal(sent.origin,ORIGIN);assert.equal(sent.pathname,'/reset-password');
+  const raw=sent.searchParams.get('token');assert.match(raw,/^[A-Za-z0-9_-]{43}$/);
+  assert.equal(f.store.data.resets.size,1);
+  assert.ok(f.store.data.resets.has(digest(raw)));
+  assert.equal(JSON.stringify(f.store.data.resets).includes(raw),false);
+  // Account status is never returned to the requester.
+  const entry=f.store.data.accounts.get('owner-account');entry.enabled=false;
+  assert.deepEqual((await c.call('forgot',{email:OWNER})).data,known.data);
+  assert.equal(delivered.length,1);
+  assert.equal(await client.identity(),null);
+});
+
+test('reset link changes password once, revokes sessions, and normal two-factor login is still required',async()=>{
+  const f=await fixture(),mail=[];
+  const service=createAuthService({...f.options,sendReset:async message=>mail.push(message)});
+  const owner=new Client(f,{service});
+  await loginToCode(f,owner);await owner.call('verify',{code:f.mail.at(-1).code});
+  assert.equal((await owner.identity()).email,OWNER);
+  const copied=owner.fork();
+  assert.equal((await owner.call('forgot',{email:OWNER})).status,200);
+  const raw=new URL(mail[0].url).searchParams.get('token');
+  assert.equal((await owner.call('reset',{token:raw,password:NEW_PASSWORD})).status,200);
+  assert.equal(await owner.identity(),null);assert.equal(await copied.identity(),null);
+  assert.equal((await owner.call('reset',{token:raw,password:'Another new and distinct password from old 8'})).status,400);
+  assert.equal(f.store.data.resets.size,0);
+  const old=new Client(f,{service});assert.equal((await old.call('login',{email:OWNER,password:FIXTURE_PASSWORD})).status,401);
+  const fresh=await old.call('login',{email:OWNER,password:NEW_PASSWORD});
+  assert.equal(fresh.status,200);assert.equal(fresh.data.step,'verify_email');
+  assert.equal(await old.identity(),null);
+});
+
+test('reset links expire; password policy, origin and token tampering are enforced',async()=>{
+  const f=await fixture(),messages=[];
+  const service=createAuthService({...f.options,sendReset:async message=>messages.push(message)});
+  const c=new Client(f,{service});
+  await c.call('forgot',{email:OWNER});
+  const raw=new URL(messages.at(-1).url).searchParams.get('token');
+  assert.equal((await c.call('reset',{token:raw,password:'short'})).status,400);
+  assert.equal((await c.call('reset',{token:raw,password:FIXTURE_PASSWORD})).status,400);
+  assert.equal((await c.call('reset',{token:'x'.repeat(43),password:NEW_PASSWORD})).status,400);
+  assert.equal((await c.call('reset',{token:raw,password:NEW_PASSWORD},{headers:{Origin:'https://untrusted.example.test'}})).status,403);
+  f.advance(AUTH_POLICY.resetTtlMs+1);
+  assert.equal((await c.call('reset',{token:raw,password:NEW_PASSWORD})).status,400);
+  assert.equal(await verifyPassword(FIXTURE_PASSWORD,(await f.store.readAccountByEmail(OWNER)).passwordHash),true);
+});
+
+test('failed email delivery keeps responses generic and destroys unusable reset token',async()=>{
+  const f=await fixture(),service=createAuthService({...f.options,sendReset:async()=>{throw Error('Fake SMTP failure and credentials');}});
+  const c=new Client(f,{service});
+  const res=await c.call('forgot',{email:OWNER});
+  assert.equal(res.status,200);
+  assert.match(res.data.message,/If this address/);
+  assert.equal(f.store.data.resets.size,0);
+  assert.ok(f.store.data.events.some(e=>e.event==='password.reset.delivery'&&e.outcome==='failure'));
+});
+
+test('older reset link is superseded; replay and simultaneous submissions cannot succeed twice',async()=>{
+  const f=await fixture(),mail=[];
+  const service=createAuthService({...f.options,sendReset:async x=>mail.push(x)});
+  const c=new Client(f,{service});
+  await c.call('forgot',{email:OWNER});
+  await c.call('forgot',{email:OWNER});
+  const first=new URL(mail[0].url).searchParams.get('token');
+  const last=new URL(mail[1].url).searchParams.get('token');
+  assert.equal((await c.call('reset',{token:first,password:NEW_PASSWORD})).status,400);
+  const results=await Promise.all([
+    c.call('reset',{token:last,password:NEW_PASSWORD}),
+    c.call('reset',{token:last,password:'Yet another valid password phrase for reset 1002'}),
+  ]);
+  assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);
+  assert.equal(f.store.data.resets.size,0);
+});
+
+test('reset links never carry account identifiers in the response and rate limits apply',async()=>{
+ const f=await fixture(),messages=[];
+ const service=createAuthService({...f.options,sendReset:async m=>messages.push(m)});
+ const c=new Client(f,{service});
+ for(let n=0;n<3;n++) assert.equal((await c.call('forgot',{email:OWNER})).status,200);
+ const limited=await c.call('forgot',{email:OWNER});
+ assert.equal(limited.status,429);assert.equal(messages.length,3);
+ assert.doesNotMatch(JSON.stringify(limited.data),/owner@example.test|token|database|sql/i);
 });

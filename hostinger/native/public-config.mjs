@@ -98,11 +98,11 @@ export function applyNativeResponsePolicy(response, pathname, csp, config) {
   headers.set('Content-Security-Policy', pathname === '/api/profile-photo' ? "default-src 'none'; sandbox" : csp);
   headers.set('Strict-Transport-Security', 'max-age=31536000');
   headers.set('X-Content-Type-Options', 'nosniff');
-  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('Referrer-Policy', pathname==='/reset-password'?'no-referrer':'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
   headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   headers.delete('X-Powered-By');
-  const privatePath = /^\/(?:workspace|api\/(?:workspace|profile-photo|auth)|sign-in)(?:\/|$)/.test(pathname);
+  const privatePath = /^\/(?:workspace|api\/(?:workspace|profile-photo|auth)|sign-in|reset-password)(?:\/|$)/.test(pathname);
   if (!config.publicLaunch || privatePath || response.status >= 400) headers.set('X-Robots-Tag', 'noindex, nofollow');
   const publicAsset = pathname.startsWith('/_next/static/') || pathname.startsWith('/assets/') || pathname === '/favicon.svg';
   if (!publicAsset || response.status >= 400) {

@@ -69,3 +69,15 @@ CREATE TABLE IF NOT EXISTS nw_auth_events (
   INDEX nw_auth_events_account_time (account_id, created_at),
   INDEX nw_auth_events_time (created_at)
 ) ENGINE=InnoDB;
+
+-- One-use password-recovery links; token bytes are never stored in plaintext.
+CREATE TABLE IF NOT EXISTS nw_auth_resets (
+  token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+  account_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  password_version INT UNSIGNED NOT NULL,
+  created_at BIGINT UNSIGNED NOT NULL,
+  expires_at BIGINT UNSIGNED NOT NULL,
+  INDEX nw_auth_resets_account (account_id),
+  INDEX nw_auth_resets_expiry (expires_at),
+  CONSTRAINT nw_auth_resets_account_fk FOREIGN KEY (account_id) REFERENCES nw_auth_accounts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

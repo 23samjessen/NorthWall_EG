@@ -1,3 +1,5 @@
+> **Update, 27 November 2026:** The native Hostinger edition now implements an opt-in email password recovery flow with single-use 15-minute token hashes, MySQL persistence, rate limits and session revocation. Production rollout requires schema-only migration and live email verification. See [PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md](PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md).
+
 # NorthWallEg security review and hardening record
 
 **Review date:** 23 November 2026  

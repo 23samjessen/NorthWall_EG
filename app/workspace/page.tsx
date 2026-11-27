@@ -1,3 +1,4 @@
+import { requireChatGPTUser } from '@/hostinger/native/site-auth';
 import Workspace from "@/components/workspace";
 import "./workspace.css";
 
@@ -8,6 +9,6 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function WorkspacePage() {
+export default async function WorkspacePage() { await requireChatGPTUser('/workspace');
   return <Workspace />;
 }

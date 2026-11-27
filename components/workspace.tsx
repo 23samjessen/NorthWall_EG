@@ -190,11 +190,11 @@ function WorkspaceAccessGate({ status, onboarding, error, busy, onAccept, onRefr
                 {denied ? <>
                     {invitation === "invited" && <button className="nw-button" disabled={busy || !onboarding?.invitationId} onClick={onAccept}>{busy ? <Loader2 size={16} className="nw-spinner"/> : <CheckCircle2 size={16}/>}Accept invitation</button>}
                     <button className={`nw-button${invitation === "invited" ? " secondary" : ""}`} disabled={busy} onClick={onRefresh}>{busy ? <Loader2 size={16} className="nw-spinner"/> : <Activity size={16}/>} {invitation === "approved" ? "Open workspace" : invitation === "pending_approval" ? "Check approval status" : "Refresh access status"}</button>
-                    <a className="nw-text-link" href="/signout-with-chatgpt?return_to=%2Fworkspace" target="_top">Use another sign-in account</a>
-                </> : status === "error" ? <button className="nw-button" disabled={busy} onClick={onRefresh}>Try again</button> : <a className="nw-button" href="/signin-with-chatgpt?return_to=%2Fworkspace" target="_top"><LockKeyhole size={16}/>Sign in to workspace</a>}
+                    <a className="nw-text-link" href="/sign-in?mode=logout&return_to=%2Fworkspace" target="_top">Use another sign-in account</a>
+                </> : status === "error" ? <button className="nw-button" disabled={busy} onClick={onRefresh}>Try again</button> : <a className="nw-button" href="/sign-in?return_to=%2Fworkspace" target="_top"><LockKeyhole size={16}/>Sign in to workspace</a>}
                 <a href="/" className="nw-button ghost">Back to NorthWallEg</a>
             </div>
-            {denied && <div className="nw-access-note">The owner creates invitations and approves employee access. Private Site sharing is a separate hosting requirement.</div>}
+            {denied && <div className="nw-access-note">The owner creates invitations and approves employee access. Sign-in verification and owner approval are both required.</div>}
             <span className="nw-demo-label">Private review demo</span>
         </div></section>
     </div></div>;

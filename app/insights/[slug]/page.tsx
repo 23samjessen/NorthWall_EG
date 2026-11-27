@@ -1,3 +1,4 @@
+import { requireCompanyAccess } from '@/hostinger/native/site-auth';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BookOpen, ExternalLink, Plus } from 'lucide-react';
@@ -8,12 +9,12 @@ import { absoluteUrl, jsonLd, openGraphBase, publicRobots } from '@/lib/seo';
 import { scriptNonce } from '@/lib/script-nonce';
 
 type Props = { params: Promise<{ slug: string }> };
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> { await requireCompanyAccess('/insights');
   const { slug } = await params; const guide = insightGuides.find(item => item.slug === slug);
   if (!guide) return {};
   return { title: guide.title, description: guide.summary, robots: publicRobots, alternates: { canonical: absoluteUrl(`/insights/${guide.slug}`) }, openGraph: { ...openGraphBase, type: 'article', title: guide.title, description: guide.summary, url: absoluteUrl(`/insights/${guide.slug}`) } };
 }
-export default async function InsightGuidePage({ params }: Props) {
+export default async function InsightGuidePage({ params }: Props) { await requireCompanyAccess('/insights');
   const nonce = await scriptNonce();
   const { slug } = await params; const guide = insightGuides.find(item => item.slug === slug); if (!guide) notFound();
   const related = services.filter(service => guide.serviceIds.includes(service.id));

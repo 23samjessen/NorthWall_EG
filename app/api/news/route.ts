@@ -1,7 +1,5 @@
-import { getNews } from '@/lib/news-service';
-
-export const dynamic = 'force-dynamic';
-export async function GET(){
-  const data=await getNews();
-  return Response.json(data,{headers:{'Cache-Control':`public, max-age=${data.status==='cached'||data.status==='unavailable'?60:120}`,'X-Content-Type-Options':'nosniff'}});
-}
+import { withPublicRequest } from '@/hostinger/native/handlers';
+import { GET as readNews } from './business-handlers';
+export const runtime='nodejs';
+export const dynamic='force-dynamic';
+export async function GET(request:Request){return withPublicRequest(request,()=>readNews());}

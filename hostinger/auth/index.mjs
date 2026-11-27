@@ -5,8 +5,8 @@ import { DUMMY_PASSWORD_HASH, hashPassword, hashTemporaryPassword, validateNewPa
 
 export { initializeAuthSchema, hashPassword, verifyPassword };
 export const AUTH_COOKIES = Object.freeze({ pending:'__Host-nw_pending', session:'__Host-nw_session' });
-export const AUTH_POLICY = Object.freeze({ codeTtlMs:300000, maxCodeAttempts:5, resendMs:60000, passwordGateTtlMs:600000, temporaryPasswordMs:86400000, absoluteSessionMs:28800000, idleSessionMs:1800000, maxBodyBytes:16384 });
-const ENDPOINTS = new Set(['status','login','enroll','verify','resend','password','logout','change-password']);
+export const AUTH_POLICY = Object.freeze({ resetTtlMs:900000, codeTtlMs:300000, maxCodeAttempts:5, resendMs:60000, passwordGateTtlMs:600000, temporaryPasswordMs:86400000, absoluteSessionMs:28800000, idleSessionMs:1800000, maxBodyBytes:16384 });
+const ENDPOINTS = new Set(['status','login','enroll','verify','resend','password','logout','change-password','forgot','reset']);
 const LIMITS = Object.freeze({
   login:{ account:10,ip:40,global:500,window:900000 },
   enroll:{ account:5,ip:20,global:100,window:3600000 },
@@ -14,6 +14,8 @@ const LIMITS = Object.freeze({
   verify:{ account:15,ip:60,global:1000,window:900000 },
   password:{ account:5,ip:20,global:200,window:900000 },
   change:{ account:5,ip:20,global:200,window:900000 },
+  forgot:{ account:3,ip:12,global:120,window:3600000 },
+  reset:{ account:8,ip:25,global:200,window:900000 },
 });
 export class AuthError extends Error {
   constructor(status,code,message,retryAfter) { super(message); this.status=status; this.code=code; this.retryAfter=retryAfter; }
@@ -57,7 +59,7 @@ async function body(request,fields) {
   return input;
 }
 
-export function createAuthService({pool,store:injectedStore,origin,secret,ownerEmail,sendCode,getInvitation,clock=Date.now,eventRetentionDays=30}={}) {
+export function createAuthService({pool,store:injectedStore,origin,secret,ownerEmail,sendCode,sendReset,getInvitation,clock=Date.now,eventRetentionDays=30,minResetResponseMs=650}={}) {
   let canonical;
   try { canonical=new URL(origin); } catch { throw new Error('A canonical HTTPS AUTH origin is required.'); }
   if(canonical.protocol!=='https:'||canonical.username||canonical.password||canonical.pathname!=='/'||canonical.search||canonical.hash) throw new Error('A canonical HTTPS AUTH origin is required.');
@@ -271,9 +273,74 @@ export function createAuthService({pool,store:injectedStore,origin,secret,ownerE
     const result=await store.transaction(async tx=>{
       const account=await tx.accountById(current.account.id),session=await tx.sessionByHash(current.hash),now=clock();
       if(!account?.enabled||!session||Number(account.passwordVersion)!==Number(current.account.passwordVersion)||Number(session.absoluteExpiresAt)<=now||Number(session.lastSeenAt)+AUTH_POLICY.idleSessionMs<=now) return failure(401,'sign_in_required','Sign in again before changing your password.');
-      account.passwordHash=passwordHash; account.passwordVersion=Number(account.passwordVersion)+1; account.mustChangePassword=false; account.temporaryExpiresAt=null; account.updatedAt=now; await tx.updateAccount(account); await tx.revokeSessions(account.id); await tx.deleteFlowsForAccount(account.id); await audit(tx,'password.changed','success',{accountId:account.id,email:account.email,context}); return {ok:true};
+      account.passwordHash=passwordHash; account.passwordVersion=Number(account.passwordVersion)+1; account.mustChangePassword=false; account.temporaryExpiresAt=null; account.updatedAt=now; await tx.updateAccount(account); await tx.revokeSessions(account.id); await tx.deleteFlowsForAccount(account.id); await tx.deleteResetsForAccount(account.id); await audit(tx,'password.changed','success',{accountId:account.id,email:account.email,context}); return {ok:true};
     });
     checked(result); return json({ok:true,authenticated:false,step:'password'},200,clearCookies());
+  }
+  const resetResponsePace=async started=>{const remaining=minResetResponseMs-(Date.now()-started);if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));};
+  // Password recovery never grants a session or bypasses email-code sign-in.
+  // Every email, including one not on file, receives the same success message.
+  async function forgotPassword(input,context) {
+    const started=Date.now();
+    const email=normalizeEmail(input.email);
+    if(!email) throw new AuthError(400,'invalid_request','Enter a valid email address.');
+    await throttle('forgot',email,context);
+    const response=json({ok:true,message:'If this address has an active account, a password reset link will be sent.'});
+    const account=await store.readAccountByEmail(email);
+    if(!account?.enabled || typeof sendReset!=='function') { await resetResponsePace(started); return response; }
+    const raw=token(),hash=tokenHash(raw),now=clock();
+    const inserted=await store.transaction(async tx=>{
+      const current=await tx.accountById(account.id);
+      if(!current?.enabled || Number(current.passwordVersion)!==Number(account.passwordVersion)) return false;
+      await tx.deleteResetsForAccount(current.id);
+      await tx.insertReset({tokenHash:hash,accountId:current.id,passwordVersion:Number(current.passwordVersion),createdAt:now,expiresAt:now+AUTH_POLICY.resetTtlMs});
+      await audit(tx,'password.reset.requested','success',{accountId:current.id,email,context});
+      return true;
+    });
+    if(!inserted) { await resetResponsePace(started); return response; }
+    // Canonical origin is fixed by server config, never the visitor Host header.
+    try { await sendReset({to:email,url:`${origin}/reset-password?token=${encodeURIComponent(raw)}`,expiresInMinutes:15}); }
+    catch {
+      // Do not reveal whether the mailbox or provider failed.
+      await store.transaction(async tx=>{await tx.deleteReset(hash);await audit(tx,'password.reset.delivery','failure',{accountId:account.id,email,context,detail:'provider_failed'});});
+    }
+    await resetResponsePace(started);
+    return response;
+  }
+  async function resetPassword(input,context) {
+    const raw=typeof input.token==='string'?input.token:'';
+    // Do not log tokens or echo them to a response.
+    if(!/^[A-Za-z0-9_-]{43}$/.test(raw)) throw new AuthError(400,'invalid_reset','This reset link is invalid or expired. Request a new one.');
+    await throttle('reset',tokenHash(raw),context);
+    let normalized;
+    try { normalized=validateNewPassword(input.password); }
+    catch(error) { throw new AuthError(400,'password_policy',error.message); }
+    const hash=tokenHash(raw),snapshot=await store.readReset(hash),now=clock();
+    if(!snapshot || Number(snapshot.expiresAt)<=now) throw new AuthError(400,'invalid_reset','This reset link is invalid or expired. Request a new one.');
+    const prior=await store.readAccountById(snapshot.accountId);
+    if(!prior?.enabled || Number(prior.passwordVersion)!==Number(snapshot.passwordVersion)) throw new AuthError(400,'invalid_reset','This reset link is invalid or expired. Request a new one.');
+    if(await verifyPassword(normalized,prior.passwordHash)) throw new AuthError(400,'password_policy','Choose a new password that differs from your previous password.');
+    const newHash=await hashPassword(normalized);
+    const done=await store.transaction(async tx=>{
+      // Account lock first; protect against concurrent updates and link replay.
+      const current=await tx.accountById(snapshot.accountId);
+      const reset=await tx.resetByHash(hash);
+      if(!current?.enabled || !reset || Number(reset.expiresAt)<=clock() || Number(reset.passwordVersion)!==Number(current.passwordVersion) || Number(current.passwordVersion)!==Number(prior.passwordVersion)) return false;
+      current.passwordHash=newHash;
+      current.passwordVersion=Number(current.passwordVersion)+1;
+      current.mustChangePassword=false;
+      current.temporaryExpiresAt=null;
+      current.updatedAt=clock();
+      await tx.updateAccount(current);
+      await tx.deleteResetsForAccount(current.id);
+      await tx.revokeSessions(current.id);
+      await tx.deleteFlowsForAccount(current.id);
+      await audit(tx,'password.reset.completed','success',{accountId:current.id,email:current.email,context});
+      return true;
+    });
+    if(!done) throw new AuthError(400,'invalid_reset','This reset link is invalid or expired. Request a new one.');
+    // No authenticated cookie is issued: email-code sign-in is still required.
+    return json({ok:true,message:'Your password has been updated. Sign in and verify your email to continue.'},200,clearCookies());
   }
   async function handle(request,context={}) {
     const pathname=new URL(request.url).pathname;
@@ -284,8 +351,10 @@ export function createAuthService({pool,store:injectedStore,origin,secret,ownerE
       if(endpoint==='status') { if(request.method!=='GET') throw new AuthError(405,'method_not_allowed','This method is not allowed.'); requestBoundary(request); return await status(request); }
       if(request.method!=='POST') throw new AuthError(405,'method_not_allowed','This method is not allowed.');
       requestBoundary(request,true);
-      const fields={login:['email','password'],enroll:['email'],verify:['code'],resend:[],password:['password'],logout:[],'change-password':['currentPassword','newPassword']};
+      const fields={login:['email','password'],enroll:['email'],verify:['code'],resend:[],password:['password'],logout:[],'change-password':['currentPassword','newPassword'],forgot:['email'],reset:['token','password']};
       const input=await body(request,fields[endpoint]);
+      if(endpoint==='forgot') return await forgotPassword(input,context);
+      if(endpoint==='reset') return await resetPassword(input,context);
       if(endpoint==='login') return await login(request,input,context);
       if(endpoint==='enroll') return await enroll(request,input,context);
       if(endpoint==='verify') return await verify(request,input,context);
@@ -319,7 +388,7 @@ export function createAuthService({pool,store:injectedStore,origin,secret,ownerE
       let account=await tx.accountByEmail(email); const now=clock(),created=!account;
       if(account&&!replace) throw new Error('The owner account already exists. Explicit offline recovery is required to replace its password.');
       if(account&&userId&&userId!==account.userId) throw new Error('Offline recovery cannot change the existing owner identity.');
-      if(account) { account.passwordHash=passwordHash; account.mustChangePassword=!!temporary; account.temporaryExpiresAt=temporary?now+AUTH_POLICY.temporaryPasswordMs:null; account.passwordVersion=Number(account.passwordVersion)+1; account.enabled=true; account.updatedAt=now; account.name=name.trim(); await tx.updateAccount(account); await tx.revokeSessions(account.id); await tx.deleteFlowsForAccount(account.id); }
+      if(account) { account.passwordHash=passwordHash; account.mustChangePassword=!!temporary; account.temporaryExpiresAt=temporary?now+AUTH_POLICY.temporaryPasswordMs:null; account.passwordVersion=Number(account.passwordVersion)+1; account.enabled=true; account.updatedAt=now; account.name=name.trim(); await tx.updateAccount(account); await tx.revokeSessions(account.id); await tx.deleteFlowsForAccount(account.id); await tx.deleteResetsForAccount(account.id); }
       else { account={id:randomUUID(),email,userId:userId||`local:${randomUUID()}`,name:name.trim(),passwordHash,mustChangePassword:!!temporary,temporaryExpiresAt:temporary?now+AUTH_POLICY.temporaryPasswordMs:null,enabled:true,passwordVersion:1,createdAt:now,updatedAt:now}; await tx.insertAccount(account); }
       await audit(tx,created?'owner.provisioned':'owner.recovered','success',{accountId:account.id,email,detail:'offline_operator'});
       return {created,email:account.email,userId:account.userId,mustChangePassword:!!account.mustChangePassword};

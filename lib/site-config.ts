@@ -82,6 +82,16 @@ export function safeSocialUrl(value: string, platform: string): string | null {
   if (url.port || !socialHosts[platform as SocialPlatform].includes(url.hostname) || url.pathname === '/') return null;
   return href;
 }
+/** Review link supplied by the verified Business Profile owner. Never invent reviews or ratings. */
+export function safeGoogleReviewUrl(value: string): string | null {
+  const href = safePublicUrl(value);
+  if(!href?.startsWith('https://')) return null;
+  const url = new URL(href);
+  if(url.port || url.username || url.password || url.hash) return null;
+  if(url.hostname === 'g.page' && /^\/r\/[A-Za-z0-9_-]+\/review\/?$/.test(url.pathname) && !url.search) return href;
+  if((url.hostname === 'search.google.com' || url.hostname === 'www.google.com') && url.pathname === '/local/writereview' && /^[A-Za-z0-9_-]{10,180}$/.test(url.searchParams.get('placeid')||'') && url.searchParams.size===1) return href;
+  return null;
+}
 function links(items: PublicLinkInput[]) {
   return items.flatMap(item => {
     const href = safePublicUrl(item.url);
@@ -149,6 +159,12 @@ export const siteConfig = {
   emails,
   socialLinks: socialChannels.filter((item): item is typeof item & { href: string } => Boolean(item.href)),
   socialChannels,
+  googleReviews: (() => {
+    const entry = profile.contact.googleReviews;
+    if (!entry.enabled) return null;
+    const href = safeGoogleReviewUrl(entry.url);
+    return href ? { href, label: entry.label } : null;
+  })(),
   officeHours: profile.contact.officeHours.filter(item => item.enabled && hasText(item.value)),
   locations,
   team,

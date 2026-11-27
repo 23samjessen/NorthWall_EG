@@ -60,7 +60,13 @@ test('real MySQL/MariaDB workspace, audit and portrait integration', {skip:datab
     const ts = (await import('typescript')).default;
     const compile = source => ts.transpileModule(source, {compilerOptions:{target:ts.ScriptTarget.ES2022, module:ts.ModuleKind.ES2022}}).outputText;
     const seed = await readFile(new URL('../../lib/workspace-seed.ts', import.meta.url), 'utf8');
-    const source = (await readFile(new URL('../../lib/workspace-server.ts', import.meta.url), 'utf8')).replace("import { env } from 'cloudflare:workers';", 'const env=globalThis.__northwallMysqlTestEnv;').replace("from './workspace-seed'", "from './workspace-seed.mjs'").replace("import resources from './knowledge-resources.json';", 'const resources={resources:[],runbooks:[]};');
+    const source = (await readFile(new URL('../../lib/workspace-server.ts', import.meta.url), 'utf8')).replace("import { env } from 'cloudflare:workers';", 'const env=globalThis.__northwallMysqlTestEnv;')
+      .replace("import { env, trustedIdentity } from '../hostinger/runtime-env';",'const env=globalThis.__northwallMysqlTestEnv;')
+      .replace("const identity=trustedIdentity();",`const userId=_request.headers.get('oai-authenticated-user-id');
+      const email=_request.headers.get('oai-authenticated-user-email');
+      const name=_request.headers.get('oai-authenticated-user-full-name');
+      const identity=userId&&email?{userId,email,name:name||email}:null;`)
+      .replace("from './workspace-seed'", "from './workspace-seed.mjs'").replace("import resources from './knowledge-resources.json';", 'const resources={resources:[],runbooks:[]};');
     await writeFile(join(temporary, 'workspace-seed.mjs'), compile(seed));
     await writeFile(join(temporary, 'workspace-server.mjs'), compile(source));
     const api = await import(pathToFileURL(join(temporary, 'workspace-server.mjs')).href);

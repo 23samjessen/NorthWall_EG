@@ -1,0 +1,37 @@
+.button {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #128c4a;
+  color: #fff;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 20%);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:hover {
+  background: #0f753e;
+  color: #fff;
+}
+
+.button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 7px #163c2b;
+}
+
+@media (max-width: 700px) {
+  .button {
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+}

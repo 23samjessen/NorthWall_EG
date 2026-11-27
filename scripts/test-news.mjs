@@ -12,6 +12,9 @@ const temporary=await mkdtemp(join(tmpdir(),'northwalleg-news-test-'));
 const originalFetch=globalThis.fetch;
 const originalNow=Date.now;
 const originalWarn=console.warn;
+// Verify the published news response shape, including redaction of error codes.
+const originalNodeEnv=process.env.NODE_ENV;
+process.env.NODE_ENV='production';
 let passed=0;
 const test=async(name,run)=>{await run();console.log(`ok ${++passed} - ${name}`);};
 const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
@@ -177,5 +180,6 @@ try {
   console.log(`\n${passed} news checks passed. No external network requests were made.`);
 } finally {
   globalThis.fetch=originalFetch;Date.now=originalNow;console.warn=originalWarn;
+  if(originalNodeEnv===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=originalNodeEnv;
   await rm(temporary,{recursive:true,force:true});
 }
