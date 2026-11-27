@@ -57,7 +57,7 @@ function Timezones(){
  const [now,setNow]=useState<Date|null>(null);useEffect(()=>{setNow(new Date());const t=setInterval(()=>setNow(new Date()),60000);return()=>clearInterval(t);},[]);
  const dateTime=(zone:string)=>{
   if(!now)return '—';
-  const date=now.toLocaleDateString('en-GB',{timeZone:zone,day:'2-digit',month:'short'});
+  const date=now.toLocaleDateString('en-GB',{timeZone:zone,weekday:'short',day:'2-digit',month:'short',year:'numeric'});
   const time=now.toLocaleTimeString('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'});
   return `${date} · ${time}`;
  };
