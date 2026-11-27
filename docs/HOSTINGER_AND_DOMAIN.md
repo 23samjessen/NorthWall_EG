@@ -1,3 +1,5 @@
+> **Latest release, 27 November 2026:** Existing database and user accounts are preserved. Add the password reset table with `node --env-file="$ENVFILE" hostinger/setup.mjs --schema-only` after uploading the new ZIP. Read `docs/PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md`. Google Reviews is hidden until an official review link is configured.
+
 # NorthWallEg on Hostinger
 
 Updated 23 November 2026. Domain: **northwallegy.com**. Repository: **23samjessen/NorthWall_EG**.

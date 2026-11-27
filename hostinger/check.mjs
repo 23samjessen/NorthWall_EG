@@ -8,8 +8,8 @@ try{
   if(process.argv.slice(2).some(value=>value!=='--smtp'))throw new Error('Use --smtp only when you want to check the configured mailbox connection. No email is sent.');
   const config=readConfig();pool=mysql.createPool(config.database);
   const storage=await checkStorage(pool);
-  const [tables]=await pool.execute("SELECT TABLE_NAME AS name,ENGINE AS engine FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('nw_auth_accounts','nw_auth_flows','nw_auth_sessions','nw_auth_limits','nw_auth_events')");
-  if(tables.length!==5||tables.some(table=>String(table.engine).toLowerCase()!=='innodb'))throw new Error('Initialize all five authentication tables as InnoDB.');
+  const [tables]=await pool.execute("SELECT TABLE_NAME AS name,ENGINE AS engine FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('nw_auth_accounts','nw_auth_flows','nw_auth_sessions','nw_auth_limits','nw_auth_events','nw_auth_resets')");
+  if(tables.length!==6||tables.some(table=>String(table.engine).toLowerCase()!=='innodb'))throw new Error('Initialize all five authentication tables as InnoDB.');
   const [[owner]]=await pool.execute('SELECT COUNT(*) AS count FROM nw_auth_accounts WHERE email=? AND enabled=1',[config.ownerEmail]);
   if(Number(owner.count)!==1)throw new Error('Provision the configured owner through the private setup command.');
   if(process.argv.includes('--smtp')){mail=nodemailer.createTransport(config.smtp);await mail.verify();}

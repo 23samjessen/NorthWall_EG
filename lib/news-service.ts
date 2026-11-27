@@ -7,7 +7,7 @@ let inFlight:Promise<NewsResult>|null=null;
 async function refreshNews():Promise<NewsResult>{
   const live=await fetchNews();
   for(const error of live.errors)console.warn('NorthWallEg news source unavailable',error.source,error.code||'unavailable');
-  const errors=live.errors.map(({source,message,code})=>({source,message,...(import.meta.env?.DEV?{code}:{})}));
+  const errors=live.errors.map(({source,message,code})=>({source,message,...(process.env.NODE_ENV !== 'production'?{code}:{})}));
   let data:NewsResult={...live,errors};
   if(live.items.length){
     lastGood={...live,errors:[]};

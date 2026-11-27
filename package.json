@@ -7,16 +7,16 @@
   },
   "scripts": {
     "install:ci": "node scripts/install-ci.mjs",
-    "dev": "node scripts/run-framework.mjs dev",
-    "build": "node scripts/run-framework.mjs build",
-    "start": "node scripts/start.mjs",
-    "build:hostinger": "node hostinger/build.mjs",
-    "start:hostinger": "node hostinger/server.mjs",
+    "dev": "next dev --webpack",
+    "build": "node hostinger/build-next.mjs",
+    "start": "node .next/standalone/server.js",
+    "build:hostinger": "node hostinger/build-next.mjs",
+    "start:hostinger": "node .next/standalone/server.js",
     "hostinger:setup": "node hostinger/setup.mjs",
     "hostinger:check": "node hostinger/check.mjs",
     "hostinger:package": "python3 hostinger/package-upload.py",
     "test:hostinger": "node --test hostinger/tests/*.test.mjs",
-    "test:hostinger-render": "node --test hostinger/tests/render.mjs",
+    "test:hostinger-render": "node --test hostinger/tests/native-render.mjs",
     "preview:worker": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
@@ -24,7 +24,8 @@
     "test:backend": "node scripts/test-workspace.mjs",
     "test:news": "node scripts/test-news.mjs",
     "test:security": "node scripts/test-security.mjs",
-    "audit:dependencies": "npm audit --audit-level=high"
+    "audit:dependencies": "npm audit --audit-level=high",
+    "test:marketing": "node --test scripts/test-marketing.mjs scripts/test-marketing-runtime.mjs scripts/test-marketing-providers.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

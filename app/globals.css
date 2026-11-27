@@ -271,3 +271,10 @@
 }
 
 .nw-marketing .nw-person-dialog-profile .nw-person-secondary-title {margin-top:9px;font-size:15px;line-height:1.6;color:var(--clay);font-weight:500}
+
+/* Optional Google reviews link; visible only after an approved Business Profile URL is set. */
+.nw-google-reviews-float{position:fixed;right:22px;bottom:104px;z-index:79;display:inline-flex;align-items:center;gap:8px;border:1px solid #dae2de;background:#fff;color:#294b43;padding:10px 13px;border-radius:999px;box-shadow:0 5px 18px #152b2533;font-size:13px;font-weight:600;text-decoration:none}
+.nw-google-reviews-float:hover{background:#eef4ef;color:#204638}
+.nw-google-reviews-float:focus-visible{outline:3px solid #17674c;outline-offset:3px}
+.nw-google-review-footer{padding-block:12px}.nw-google-review-footer a{display:inline-flex;align-items:center;gap:9px;text-decoration:underline;text-underline-offset:4px;font-size:13px}
+@media(max-width:650px){.nw-google-reviews-float{right:15px;bottom:99px;padding:12px}.nw-google-reviews-float span{display:none}}

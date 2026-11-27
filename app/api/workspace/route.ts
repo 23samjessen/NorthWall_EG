@@ -1,5 +1,6 @@
-import { readWorkspace, readInvitationStatus, mutateWorkspace, readAudit, apiFailure } from '@/lib/workspace-server';
-export const dynamic = 'force-dynamic';
-const headers = {'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Cookie'};
-export async function GET(request:Request){try{const url=new URL(request.url);if(url.searchParams.get('view')==='onboarding')return Response.json(await readInvitationStatus(request),{headers});if(url.searchParams.get('view')==='audit'){const result=await readAudit(request);if(url.searchParams.get('format')==='json')return new Response(JSON.stringify(result,null,2),{headers:{...headers,'Content-Type':'application/json','Content-Disposition':'attachment; filename="NorthWallEg-audit-evidence.json"'}});return Response.json(result,{headers});}return Response.json(await readWorkspace(request),{headers});}catch(error){return apiFailure(error);}}
-export async function POST(request:Request){try{return Response.json(await mutateWorkspace(request),{headers});}catch(error){return apiFailure(error);}}
+import { withWorkspaceRequest } from '@/hostinger/native/handlers';
+import * as business from './business-handlers';
+export const runtime='nodejs';
+export const dynamic='force-dynamic';
+export async function GET(request:Request){return withWorkspaceRequest(request,business.GET);}
+export async function POST(request:Request){return withWorkspaceRequest(request,business.POST);}

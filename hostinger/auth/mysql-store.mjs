@@ -22,6 +22,10 @@ export function createMySqlAuthStore(pool) {
     accountById: id => one(connection, `SELECT ${ACCOUNT} FROM nw_auth_accounts WHERE id=? FOR UPDATE`, [id]),
     async insertAccount(a) { await connection.execute('INSERT INTO nw_auth_accounts(id,email,user_id,name,password_hash,must_change_password,temporary_expires_at,enabled,password_version,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)', accountValues(a)); },
     async updateAccount(a) { await connection.execute('UPDATE nw_auth_accounts SET name=?,password_hash=?,must_change_password=?,temporary_expires_at=?,enabled=?,password_version=?,updated_at=? WHERE id=?', [a.name,a.passwordHash,a.mustChangePassword,a.temporaryExpiresAt??null,a.enabled,a.passwordVersion,a.updatedAt,a.id]); },
+    resetByHash: hash => one(connection, 'SELECT token_hash AS tokenHash,account_id AS accountId,password_version AS passwordVersion,created_at AS createdAt,expires_at AS expiresAt FROM nw_auth_resets WHERE token_hash=? FOR UPDATE', [hash]),
+    async insertReset(reset) { await connection.execute('INSERT INTO nw_auth_resets(token_hash,account_id,password_version,created_at,expires_at) VALUES(?,?,?,?,?)', [reset.tokenHash,reset.accountId,reset.passwordVersion,reset.createdAt,reset.expiresAt]); },
+    async deleteReset(hash) { await connection.execute('DELETE FROM nw_auth_resets WHERE token_hash=?', [hash]); },
+    async deleteResetsForAccount(id) { await connection.execute('DELETE FROM nw_auth_resets WHERE account_id=?', [id]); },
     flowByHash: hash => one(connection, `SELECT ${FLOW} FROM nw_auth_flows WHERE token_hash=? FOR UPDATE`, [hash]),
     async insertFlow(f) { await connection.execute('INSERT INTO nw_auth_flows(id,token_hash,account_id,email,purpose,stage,invitation_id,member_id,account_version,otp_mac,otp_generation,otp_attempts,expires_at,resend_at,verified_at,delivered,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', flowValues(f)); },
     async updateFlow(f) { await connection.execute('UPDATE nw_auth_flows SET token_hash=?,stage=?,otp_mac=?,otp_generation=?,otp_attempts=?,expires_at=?,resend_at=?,verified_at=?,delivered=? WHERE id=?', [f.tokenHash,f.stage,f.otpMac,f.otpGeneration,f.otpAttempts,f.expiresAt,f.resendAt,f.verifiedAt,f.delivered,f.id]); },
@@ -46,6 +50,7 @@ export function createMySqlAuthStore(pool) {
   return {
     readAccountByEmail: email => one(pool, `SELECT ${ACCOUNT} FROM nw_auth_accounts WHERE email=?`, [email]),
     readAccountById: id => one(pool, `SELECT ${ACCOUNT} FROM nw_auth_accounts WHERE id=?`, [id]),
+    readReset: hash => one(pool, 'SELECT token_hash AS tokenHash,account_id AS accountId,password_version AS passwordVersion,created_at AS createdAt,expires_at AS expiresAt FROM nw_auth_resets WHERE token_hash=?', [hash]),
     readFlow: hash => one(pool, `SELECT ${FLOW} FROM nw_auth_flows WHERE token_hash=?`, [hash]),
     readSession: hash => one(pool, `SELECT ${SESSION} FROM nw_auth_sessions WHERE token_hash=?`, [hash]),
     async transaction(callback) {
@@ -56,6 +61,7 @@ export function createMySqlAuthStore(pool) {
     },
     async cleanup(now, eventRetentionMs) {
       // Bounded batches keep maintenance from monopolising the MySQL pool.
+      await pool.execute('DELETE FROM nw_auth_resets WHERE expires_at<? LIMIT 1000', [now]);
       await pool.execute('DELETE FROM nw_auth_flows WHERE expires_at<? LIMIT 1000', [now]);
       await pool.execute('DELETE FROM nw_auth_sessions WHERE absolute_expires_at<? OR last_seen_at<? LIMIT 1000', [now,now-30*60*1000]);
       await pool.execute('DELETE FROM nw_auth_limits WHERE expires_at<? LIMIT 1000', [now]);

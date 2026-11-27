@@ -1,3 +1,5 @@
+> **Update, 27 November 2026:** Non-owner account holders can now recover their password through a time-limited email link. Owner and employee accounts share this flow; it never grants access without verified sign-in or owner approval. See [PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md](PASSWORD_RECOVERY_AND_GOOGLE_REVIEWS.md).
+
 # Authentication, HTTPS and employee verification
 
 ## Current status: implemented Hostinger code, deployment still pending

@@ -2,12 +2,13 @@
 // This contains storage primitives, not a second authentication implementation.
 export class MemoryAuthStore {
   constructor() {
-    this.data={accounts:new Map(),flows:new Map(),sessions:new Map(),limits:new Map(),events:[]};
+    this.data={accounts:new Map(),flows:new Map(),sessions:new Map(),resets:new Map(),limits:new Map(),events:[]};
     this.tail=Promise.resolve();
     this.failNextCommit=false;
   }
   async readAccountByEmail(email) { await this.tail; return structuredClone([...this.data.accounts.values()].find(a=>a.email===email)||null); }
   async readAccountById(id) { await this.tail; return structuredClone(this.data.accounts.get(id)||null); }
+  async readReset(hash) { await this.tail; return structuredClone(this.data.resets.get(hash)||null); }
   async readFlow(hash) { await this.tail; return structuredClone(this.data.flows.get(hash)||null); }
   async readSession(hash) { await this.tail; return structuredClone(this.data.sessions.get(hash)||null); }
   async transaction(callback) {
@@ -22,6 +23,10 @@ export class MemoryAuthStore {
       accountById:async id=>copy(this.data.accounts.get(id)),
       insertAccount:async a=>{ if([...this.data.accounts.values()].some(x=>x.email===a.email||x.userId===a.userId)) throw new Error('Duplicate account'); this.data.accounts.set(a.id,copy(a)); },
       updateAccount:async a=>{this.data.accounts.set(a.id,copy(a));},
+      resetByHash:async hash=>copy(this.data.resets.get(hash)),
+      insertReset:async r=>{this.data.resets.set(r.tokenHash,copy(r));},
+      deleteReset:async hash=>{this.data.resets.delete(hash);},
+      deleteResetsForAccount:async id=>{for(const [key,value] of this.data.resets)if(value.accountId===id)this.data.resets.delete(key);},
       flowByHash:async hash=>copy(this.data.flows.get(hash)),
       insertFlow:async f=>{this.data.flows.set(f.tokenHash,copy(f));},
       updateFlow:async f=>{for(const [key,value] of this.data.flows)if(value.id===f.id)this.data.flows.delete(key);this.data.flows.set(f.tokenHash,copy(f));},
@@ -47,6 +52,7 @@ export class MemoryAuthStore {
   }
   async cleanup(now,retention) {
     await this.tail;
+    for(const [key,r]of this.data.resets)if(r.expiresAt<now)this.data.resets.delete(key);
     for(const [key,f]of this.data.flows)if(f.expiresAt<now)this.data.flows.delete(key);
     for(const [key,s]of this.data.sessions)if(s.absoluteExpiresAt<now||s.lastSeenAt+1800000<now)this.data.sessions.delete(key);
     for(const [key,r]of this.data.limits)if(r.expiresAt<now)this.data.limits.delete(key);

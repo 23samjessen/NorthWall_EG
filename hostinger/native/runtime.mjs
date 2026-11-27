@@ -84,7 +84,7 @@ async function initialize(publicConfig) {
 
     const auth = createAuthService({
       pool, origin: config.origin, secret: config.secret, ownerEmail: config.ownerEmail,
-      sendCode: mail.sendCode, getInvitation,
+      sendCode: mail.sendCode, sendReset: mail.sendPasswordReset, getInvitation,
     });
     // Missing authentication tables fail closed. Startup never creates an owner
     // or changes existing account/database records through implicit bootstrap.

@@ -1,9 +1,9 @@
-name: NorthWallEg application checks
+name: NorthWallEg Hostinger production checks
 on: [push, pull_request]
 permissions:
   contents: read
 jobs:
-  check:
+  verify:
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -14,8 +14,7 @@ jobs:
           MYSQL_PASSWORD: ci-fixture-only
           MYSQL_ROOT_PASSWORD: ci-root-fixture-only
           MYSQL_ROOT_HOST: '%'
-        ports:
-          - 127.0.0.1:3306:3306
+        ports: ['127.0.0.1:3306:3306']
         options: >-
           --health-cmd="mysqladmin ping --silent"
           --health-interval=10s
@@ -28,7 +27,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - name: Create isolated authentication test database
+      - name: Prepare isolated test-only databases
         run: node hostinger/tests/create-ci-databases.mjs
         env:
           NW_CI_DB_PASSWORD: ci-root-fixture-only
@@ -36,7 +35,9 @@ jobs:
       - run: npm run test:backend
       - run: npm run test:news
       - run: npm run test:security
-      - run: npm run test:hostinger
+      - run: npm run test:marketing
+      - name: Hostinger authentication, recovery and MySQL tests
+        run: npm run test:hostinger
         env:
           NW_TEST_DB_NAME: northwall_test_ci
           NW_TEST_DB_USER: northwall_ci
@@ -44,25 +45,23 @@ jobs:
           NW_AUTH_TEST_DB_NAME: northwall_test_auth_ci
           NW_AUTH_TEST_DB_USER: northwall_ci
           NW_AUTH_TEST_DB_PASSWORD: ci-fixture-only
-      - run: npm run audit:dependencies
       - run: node scripts/test-sticky-header.mjs
-      - run: npm run build
-      - name: Build and exercise the exported native Next.js Hostinger server
-        run: |
-          python3 -B hostinger/package-upload.py --profile nextjs --output "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip"
-          mkdir "$RUNNER_TEMP/northwall-upload-check"
-          unzip -q "$RUNNER_TEMP/NorthWallEg-Hostinger-Upload.zip" -d "$RUNNER_TEMP/northwall-upload-check"
-          cd "$RUNNER_TEMP/northwall-upload-check"
-          NODE_ENV=production npm ci
-          env -u NORTHWALL_RUNTIME npm run build
-          env -u NORTHWALL_RUNTIME npm run test:hostinger-render
+      - run: npm run audit:dependencies
+      - name: Build the complete Hostinger Next.js application
+        run: npm run build
         env:
           APP_ORIGIN: https://northwallegy.com
           PUBLIC_LAUNCH: 'false'
-      - name: Package Hostinger upload for manual deployment
-        uses: actions/upload-artifact@v4
+      - name: Verify the generated standalone server
+        run: npm run test:hostinger-render
+        env:
+          APP_ORIGIN: https://northwallegy.com
+          PUBLIC_LAUNCH: 'false'
+      - name: Export Hostinger upload package
+        run: python3 -B hostinger/package-upload.py --profile nextjs --output "$RUNNER_TEMP/NorthWallEg-Hostinger-Password-Recovery-Google-Reviews.zip"
+      - uses: actions/upload-artifact@v4
         with:
-          name: NorthWallEg-Hostinger-Sticky-Nav
-          path: ${{ runner.temp }}/NorthWallEg-Hostinger-Upload.zip
+          name: NorthWallEg-Hostinger-Password-Recovery-Google-Reviews
+          path: ${{ runner.temp }}/NorthWallEg-Hostinger-Password-Recovery-Google-Reviews.zip
           if-no-files-found: error
           retention-days: 14

@@ -157,7 +157,15 @@
         "address": "",
         "mapUrl": ""
       }
-    ]
+    ],
+    "googleReviews": {
+      "enabled": false,
+      "url": "",
+      "label": {
+        "en": "Review us on Google",
+        "ar": "قيّمنا على Google"
+      }
+    }
   },
   "team": [
     {

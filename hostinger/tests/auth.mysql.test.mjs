@@ -19,14 +19,14 @@ test('real MySQL: gated login, OTP consumption, enrollment and owner-revocation 
   const origin='https://mysql-auth.example.test',owner='owner@mysql-auth.example.test';
   const temporary='Qx6!mR8?',replacement='Synthetic MySQL replacement credential 865';
   let now=Date.now(),waitForLock=false,notifyLock;
-  const mail=[],lockChecks=[];
+  const mail=[],resetMail=[],lockChecks=[];
   let lockedConnection;
   try {
     const [existing]=await pool.execute('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=?',[database]);
     assert.equal(existing.length,0,'Refusing to operate on a non-empty database. No tables are dropped or reset.');
     await initializeAuthSchema(pool);
     await pool.execute('CREATE TABLE nw_auth_test_invitations (email VARCHAR(254) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY, member_id VARCHAR(100) NOT NULL, invitation_id VARCHAR(100) NOT NULL, status VARCHAR(20) NOT NULL, expires_at BIGINT UNSIGNED NOT NULL, identity_anchor VARCHAR(191) NULL) ENGINE=InnoDB');
-    const service=createAuthService({pool,origin,secret:randomBytes(32).toString('hex'),ownerEmail:owner,clock:()=>now,sendCode:async message=>{mail.push({...message});},getInvitation:async(email,context)=>{
+    const service=createAuthService({pool,origin,secret:randomBytes(32).toString('hex'),ownerEmail:owner,clock:()=>now,minResetResponseMs:0,sendCode:async message=>{mail.push({...message});},sendReset:async message=>{resetMail.push({...message});},getInvitation:async(email,context)=>{
       const connection=context?.connection||pool;
       lockChecks.push({email,lock:!!context?.lock,samePoolConnection:!!context?.connection});
       if(waitForLock&&context?.lock&&email==='race@mysql-auth.example.test')notifyLock?.();
@@ -101,6 +101,24 @@ test('real MySQL: gated login, OTP consumption, enrollment and owner-revocation 
         if(lockedConnection){await lockedConnection.rollback();lockedConnection.release();lockedConnection=null;}
         await choosing.catch(()=>{});
       }
+    });
+
+    await t.test('real MySQL reset link is hashed, single-use, and revokes the old owner session',async()=>{
+      const ownerClient=makeClient();
+      await call(ownerClient,'login',{email:owner,password:replacement});
+      await call(ownerClient,'verify',{code:mail.at(-1).code});
+      assert.equal((await identity(ownerClient)).email,owner);
+      assert.equal((await call(ownerClient,'forgot',{email:owner})).status,200);
+      const link=new URL(resetMail.at(-1).url),token=link.searchParams.get('token');
+      assert.equal(link.origin,origin);
+      const [stored]=await pool.execute('SELECT token_hash FROM nw_auth_resets');
+      assert.equal(stored.length,1);assert.notEqual(stored[0].token_hash,token);
+      assert.equal((await call(ownerClient,'reset',{token,password:'Dedicated MySQL reset password number 2026'})).status,200);
+      assert.equal(await identity(ownerClient),null);
+      assert.equal((await call(ownerClient,'reset',{token,password:'Different password for replay should fail 2026'})).status,400);
+      const [remaining]=await pool.execute('SELECT token_hash FROM nw_auth_resets');assert.equal(remaining.length,0);
+      const fresh=makeClient();assert.equal((await call(fresh,'login',{email:owner,password:'Dedicated MySQL reset password number 2026'})).data.step,'verify_email');
+      assert.equal(await identity(fresh),null);
     });
 
     const [engines]=await pool.execute('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=?',[database]);
