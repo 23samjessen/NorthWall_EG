@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
 // Exercise the actual server implementation against transactional SQLite.
-// Only the Cloudflare binding and module imports are adapted for this test process.
+// Test-only adapters for the Cloudflare and Hostinger runtime bindings; no production identity policy changes.
 const temporary=await mkdtemp(join(tmpdir(),'northwall-backend-'));
 const sqlite=new DatabaseSync(':memory:');
 sqlite.exec(await readFile(new URL('../drizzle/0000_clean_silk_fever.sql',import.meta.url),'utf8'));
@@ -21,12 +21,18 @@ const bucket={async put(key,value,options){const bytes=new Uint8Array(value);pho
 globalThis.__northwallTestEnv={BUCKET:bucket,DB:{prepare:statement,async batch(statements){if(beforeAuditBatch&&statements.every(s=>/^SELECT\b/i.test(s.sql.trim()))){const hook=beforeAuditBatch;beforeAuditBatch=null;await hook();}if(beforeWriteBatch&&statements.some(s=>!/^SELECT\b/i.test(s.sql.trim()))){const hook=beforeWriteBatch;beforeWriteBatch=null;await hook();}sqlite.exec('BEGIN IMMEDIATE');try{const results=statements.map(s=>s.run());sqlite.exec('COMMIT');return results;}catch(error){sqlite.exec('ROLLBACK');throw error;}}},ADMIN_EMAILS:'23samjessen@gmail.com'};
 const seed=await readFile(new URL('../lib/workspace-seed.ts',import.meta.url),'utf8');
 let server=await readFile(new URL('../lib/workspace-server.ts',import.meta.url),'utf8');
-server=server.replace("import { env } from 'cloudflare:workers';",'const env=globalThis.__northwallTestEnv;').replace("from './workspace-seed'","from './workspace-seed.mjs'").replace("import resources from './knowledge-resources.json';",'const resources={resources:[],runbooks:[]};');
+server=server.replace("import { env } from 'cloudflare:workers';",'const env=globalThis.__northwallTestEnv;')
+  .replace("import { env, trustedIdentity } from '../hostinger/runtime-env';",'const env=globalThis.__northwallTestEnv;')
+  .replace("const identity=trustedIdentity();",`const userId=_request.headers.get('oai-authenticated-user-id');
+  const email=_request.headers.get('oai-authenticated-user-email');
+  const name=_request.headers.get('oai-authenticated-user-full-name');
+  const identity=userId&&email?{userId,email,name:name||email}:null;`)
+  .replace("from './workspace-seed'","from './workspace-seed.mjs'").replace("import resources from './knowledge-resources.json';",'const resources={resources:[],runbooks:[]};');
 const compile=source=>ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
 await writeFile(join(temporary,'workspace-seed.mjs'),compile(seed));
 await writeFile(join(temporary,'workspace-server.mjs'),compile(server));
 const api=await import(pathToFileURL(join(temporary,'workspace-server.mjs')).href);
-const routeSource=(await readFile(new URL('../app/api/workspace/route.ts',import.meta.url),'utf8')).replace("'@/lib/workspace-server'","'./workspace-server.mjs'");
+const routeSource=(await readFile(new URL('../app/api/workspace/business-handlers.ts',import.meta.url),'utf8')).replace("'@/lib/workspace-server'","'./workspace-server.mjs'");
 await writeFile(join(temporary,'workspace-route.mjs'),compile(routeSource));
 const route=await import(pathToFileURL(join(temporary,'workspace-route.mjs')).href);
 const identities={owner:{id:'platform-owner',email:'23samjessen@gmail.com',name:'Sam Jessen'},employee:{id:'platform-employee',email:'employee@example.com',name:'Employee Test'},manager:{id:'platform-manager',email:'manager@example.com',name:'Manager Test'},outsider:{id:'platform-outsider',email:'outsider@example.com',name:'Outsider'},ownerReplacement:{id:'platform-replacement',email:'23samjessen@gmail.com',name:'Reused owner email'},employeeReplacement:{id:'platform-replacement-employee',email:'employee@example.com',name:'Reused employee email'},employeeChangedEmail:{id:'platform-employee',email:'changed-employee@example.com',name:'Same identity'},legacy:{id:'platform-legacy',email:'legacy@example.com',name:'Legacy account'},sample:{id:'platform-sample',email:'nora@demo.invalid',name:'Sample persona'}};
