@@ -55,8 +55,13 @@ function Modal({title,children,onClose,closeLabel='Close dialog'}:{title:string;
 }
 function Timezones(){
  const [now,setNow]=useState<Date|null>(null);useEffect(()=>{setNow(new Date());const t=setInterval(()=>setNow(new Date()),60000);return()=>clearInterval(t);},[]);
- const time=(zone:string)=>now?.toLocaleTimeString('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'})??'—';
- return <div className="nw-worldtime" dir="ltr"><span>Cairo <b>{time('Africa/Cairo')}</b></span><span>Copenhagen <b>{time('Europe/Copenhagen')}</b></span></div>;
+ const dateTime=(zone:string)=>{
+  if(!now)return '—';
+  const date=now.toLocaleDateString('en-GB',{timeZone:zone,day:'2-digit',month:'short'});
+  const time=now.toLocaleTimeString('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit'});
+  return `${date} · ${time}`;
+ };
+ return <div className="nw-worldtime" dir="ltr"><span>Cairo <b>{dateTime('Africa/Cairo')}</b></span><span>Copenhagen <b>{dateTime('Europe/Copenhagen')}</b></span></div>;
 }
 function NewsTicker({expanded=false}:{expanded?:boolean}){
  const [items,setItems]=useState<NewsItem[]>([]);const [fetched,setFetched]=useState('');const [checked,setChecked]=useState('');const [feedStatus,setFeedStatus]=useState('');const [state,setState]=useState('loading');const [paused,setPaused]=useState(false);const [opened,setOpened]=useState(expanded);
