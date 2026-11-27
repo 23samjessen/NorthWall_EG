@@ -24,7 +24,7 @@ export default function ResetPasswordPage(){
    setBusy(true);setError('');
    try{
     const response=await fetch('/api/auth/reset',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password})});
-    const data=await response.json().catch(()=>({}));
+    const data=await response.json().catch(()=>({})) as {error?:string};
     if(!response.ok)throw new Error(typeof data.error==='string'?data.error:'The reset link could not be used. Request a new link.');
     setToken('');setPassword('');setConfirmation('');setSuccess(true);
    }catch(error){setError(error instanceof Error?error.message:'Password reset was unsuccessful.');}
